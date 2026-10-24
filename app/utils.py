@@ -35,10 +35,10 @@ SUB_COLS: dict[str, str] = {
 }
 
 BAND_COLORS: dict[str, str] = {
-    "Low": "#2ecc71",
-    "Moderate": "#f1c40f",
-    "High": "#e67e22",
-    "Critical": "#e74c3c",
+    "Low": "#385E48",       # Deep muted sage/pine
+    "Moderate": "#827845",  # Antiqued brass / olive
+    "High": "#BA6835",      # Warm terracotta
+    "Critical": "#B84324",  # Burnt orange / sienna
 }
 
 BAND_ORDER: list[str] = ["Low", "Moderate", "High", "Critical"]

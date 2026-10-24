@@ -1,10 +1,9 @@
 """
 SAHAAYA — What-If Scenario Simulator.
 
-Lets users adjust indicator values for a selected district and see
-how the composite risk scores change.  Uses the WhatIfSimulator from
-src.models.simulate if available; otherwise falls back to a simple
-re-computation of the weighted mean.
+Civic Intelligence, Editorial Precision aesthetic:
+Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
+and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -14,7 +13,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Scenario Simulator — SAHAAYA",
-    page_icon="🧪",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -29,27 +28,26 @@ from utils import (  # noqa: E402
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
-    render_topbar,
-    render_hero,
-    render_kpi,
-    render_risk_pill,
-    render_sidebar_brand,
-    style_plotly_fig,
+    render_masthead,
+    render_section_header,
+    render_editorial_scorecard,
+    render_editorial_badge,
+    render_sidebar_masthead,
+    style_editorial_figure,
 )
 
 # ---------------------------------------------------------------------------
-# Theme & Top Navigation
+# Theme & Masthead
 # ---------------------------------------------------------------------------
 inject_custom_theme()
-render_topbar(current_page="Simulator")
+render_sidebar_masthead(get_data_status())
 
-render_hero(
-    tag="WHAT-IF POLICY EXPERIMENTATION",
-    title="Counterfactual Policy Simulator",
-    description="Adjust underlying social and infrastructural indicators to model estimated impact on composite district vulnerability. Designed for budgetary planning and sensitivity analysis.",
+render_masthead(
+    folio_code="POLICY EXPERIMENTATION LAB · COUNTERFACTUAL MODEL",
+    title="Intervention & What-If Scenario Simulator",
+    deck="Simulate targeted social and infrastructural investments (e.g., expanding school amenities, boosting maternal healthcare, strengthening rural wage guarantees) and evaluate estimated counterfactual shifts in composite district vulnerability.",
+    location_tag="DECISION-SUPPORT LAB · COUNTERFACTUAL INFERENCE",
 )
-
-render_sidebar_brand(get_data_status())
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -57,11 +55,11 @@ render_sidebar_brand(get_data_status())
 features_df = load_features()
 
 if features_df is None:
-    st.error("**features.parquet not found.** Run the data pipeline first.")
+    st.error("Telemetry store `features.parquet` not located. Please execute the ingestion pipeline.")
     st.stop()
 
 if is_mock_data(features_df):
-    st.warning("⚠️ Mock / synthetic data detected. Results are illustrative only.")
+    st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
 # District Selector in Main Ribbon
@@ -75,19 +73,19 @@ else:
 
 districts = sorted(view["district_name"].dropna().unique())
 if not districts:
-    st.error("No districts found in the data.")
+    st.error("No districts located in active dataset.")
     st.stop()
 
-col_s1, col_s2 = st.columns([2, 1])
+col_s1, col_s2 = st.columns([2.5, 1])
 with col_s1:
-    district = st.selectbox("📍 Select District to Simulate", districts, index=0)
+    district = st.selectbox("Target Jurisdiction for Simulation", districts, index=0)
 with col_s2:
-    period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Latest Available"
-    st.selectbox("📅 Base Reporting Period", [period_str], disabled=True)
+    period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Current Administrative Audit"
+    st.selectbox("Base Reporting Period", [period_str], disabled=True)
 
 row = view[view["district_name"] == district]
 if row.empty:
-    st.error(f"No data for **{district}**.")
+    st.error(f"No records found for '{district}'.")
     st.stop()
 
 baseline = row.iloc[0]
@@ -107,50 +105,66 @@ indicator_cols = [
 ]
 
 if not indicator_cols:
-    st.warning("No adjustable source indicators found in dataset.")
+    st.warning("No adjustable source indicators found in active dataset.")
     st.stop()
 
 # ---------------------------------------------------------------------------
-# Baseline Profile KPIs
+# Baseline Profile Scorecard
 # ---------------------------------------------------------------------------
 def _fmt(val, decimals=1):
     if pd.isna(val):
         return "N/A"
     return f"{val:.{decimals}f}"
 
-st.markdown(
-    f"<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
-    f"📊 Current Baseline Telemetry — {district} "
-    f"{render_risk_pill(baseline.get('risk_band', 'Moderate'))}"
-    f"</div>",
-    unsafe_allow_html=True,
-)
+render_section_header("SEC. 01", f"Baseline Scorecard — {district}", "Pre-Intervention Status")
 
-b1, b2, b3, b4, b5 = st.columns(5)
-with b1:
-    render_kpi("Overall Score", _fmt(baseline.get("overall_score")), icon="🎯", color_accent="#4f46e5")
-with b2:
-    render_kpi("Education Risk", _fmt(baseline.get("edu_risk")), icon="🎓", color_accent="#06b6d4")
-with b3:
-    render_kpi("Health Risk", _fmt(baseline.get("health_risk")), icon="🏥", color_accent="#f59e0b")
-with b4:
-    render_kpi("Employment Risk", _fmt(baseline.get("emp_risk")), icon="💼", color_accent="#8b5cf6")
-with b5:
-    render_kpi("Infra Risk", _fmt(baseline.get("infra_risk")), icon="⚡", color_accent="#ec4899")
+band_base = baseline.get("risk_band", "Moderate")
 
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+render_editorial_scorecard([
+    {
+        "label": "Baseline Composite Index",
+        "value": _fmt(baseline.get("overall_score")),
+        "note": "Combined pre-intervention risk",
+        "tag": str(band_base),
+        "tag_bg": "#FAEDE3" if str(band_base) in ["High", "Critical"] else "#EAEFEA",
+        "tag_fg": "#8C4318" if str(band_base) in ["High", "Critical"] else "#264230",
+        "tag_border": "#E8C1A5" if str(band_base) in ["High", "Critical"] else "#BDCFBF",
+    },
+    {
+        "label": "Education Vulnerability",
+        "value": _fmt(baseline.get("edu_risk")),
+        "note": "Baseline schooling stress",
+    },
+    {
+        "label": "Healthcare Deficit",
+        "value": _fmt(baseline.get("health_risk")),
+        "note": "Baseline nutritional stress",
+    },
+    {
+        "label": "Employment Deficit",
+        "value": _fmt(baseline.get("emp_risk")),
+        "note": "Baseline rural wage stress",
+    },
+    {
+        "label": "Infra Deficit",
+        "value": _fmt(baseline.get("infra_risk")),
+        "note": "Baseline civic infrastructure",
+    },
+])
 
 # ---------------------------------------------------------------------------
 # Interactive Intervention Sliders
 # ---------------------------------------------------------------------------
+render_section_header("SEC. 02", "Intervention Control Surface", "Counterfactual Parameter Sliders")
+
 st.markdown(
     """
-    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 14px -3px rgba(15,23,42,0.04); margin-bottom:24px;">
-        <div style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:4px;">
-            🎛️ Policy Intervention Controls
+    <div style="background:#FFFFFF; border:1px solid #E2DED4; border-top:2px solid #14241D; padding:18px 20px; margin-bottom:18px;">
+        <div style="font-family:'Newsreader',serif; font-size:1.15rem; color:#14241D; margin-bottom:4px;">
+            Simulated Feature Parameters
         </div>
-        <div style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
-            Adjust the sliders to model targeted policy interventions and infrastructural investments.
+        <div style="font-family:'IBM Plex Sans'; font-size:0.82rem; color:#6E756C; margin-bottom:16px;">
+            Adjust the sliders below to model hypothetical state intervention envelopes and capital allocations.
         </div>
     """,
     unsafe_allow_html=True,
@@ -172,7 +186,6 @@ for i in range(0, len(indicator_cols), n_per_row):
         cur = float(current)
         cur = max(lo, min(hi, cur))
 
-        # Humanized name
         clean_name = col_name.replace("_", " ").title()
 
         with cols[j % n_per_row]:
@@ -187,9 +200,9 @@ for i in range(0, len(indicator_cols), n_per_row):
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Simulation Trigger & Results
+# Simulation Execution
 # ---------------------------------------------------------------------------
-simulate_clicked = st.button("🚀 Run Scenario Simulation", type="primary", use_container_width=True)
+simulate_clicked = st.button("EXECUTE COUNTERFACTUAL SIMULATION", type="primary", use_container_width=True)
 
 if simulate_clicked:
     simulator = None
@@ -219,20 +232,14 @@ if simulate_clicked:
             "overall_score": modified[dim_cols].mean() if dim_cols else None,
         }
 
-    # Display Side-by-Side Comparison
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.25rem; color:#0f172a; margin-top:20px; margin-bottom:12px;'>"
-        "🔬 Counterfactual Impact Assessment"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 03", "Counterfactual Impact Assessment", "Pre vs. Post Intervention")
 
     comp_items = [
-        ("Overall Score", "overall_score"),
-        ("Education Risk", "edu_risk"),
-        ("Health Risk", "health_risk"),
-        ("Employment Risk", "emp_risk"),
-        ("Infrastructure Risk", "infra_risk"),
+        ("Overall Composite Vulnerability", "overall_score"),
+        ("Education Vulnerability", "edu_risk"),
+        ("Healthcare Deficit", "health_risk"),
+        ("Employment Deficit", "emp_risk"),
+        ("Civic Infrastructure", "infra_risk"),
     ]
 
     base_scores = []
@@ -250,41 +257,56 @@ if simulate_clicked:
     if labels:
         df_chart = pd.DataFrame({
             "Dimension": labels * 2,
-            "Score": base_scores + scen_scores,
-            "Scenario": ["Baseline"] * len(labels) + ["Post-Intervention"] * len(labels),
+            "Index": base_scores + scen_scores,
+            "State": ["Baseline (Audited)"] * len(labels) + ["Post-Intervention (Simulated)"] * len(labels),
         })
 
         fig_sim = px.bar(
             df_chart,
             x="Dimension",
-            y="Score",
-            color="Scenario",
+            y="Index",
+            color="State",
             barmode="group",
             range_y=[0, 100],
             color_discrete_map={
-                "Baseline": "#64748b",
-                "Post-Intervention": "#4f46e5",
+                "Baseline (Audited)": "#5A665E",             # Muted sage/slate
+                "Post-Intervention (Simulated)": "#14241D",   # Deep forest green
             },
-            text="Score",
+            text="Index",
         )
-        fig_sim.update_traces(textposition="outside")
-        style_plotly_fig(fig_sim, height=380, title=f"Pre vs. Post Intervention Vulnerability: {district}")
+        fig_sim.update_traces(
+            textposition="outside",
+            marker=dict(line=dict(width=0.8, color="#14241D")),
+            textfont=dict(family="IBM Plex Mono", size=10),
+        )
+        style_editorial_figure(
+            fig_sim,
+            height=360,
+            title=f"Counterfactual Impact Comparison — {district}",
+            subtitle="Observed telemetry versus simulated intervention response",
+        )
         st.plotly_chart(fig_sim, use_container_width=True)
 
-    # Delta Summary Table
+    # Detailed Delta Ledger Table
     delta_rows = []
     for label, key in comp_items:
         bv = baseline.get(key)
         sv = scenario_result.get(key) if isinstance(scenario_result, dict) else None
         if pd.notna(bv) and pd.notna(sv):
             diff = float(sv) - float(bv)
-            status = "✅ Improved" if diff < -0.1 else ("⚠️ Increased Risk" if diff > 0.1 else "Neutral")
+            if diff < -0.1:
+                status = "REDUCED / AMELIORATED"
+            elif diff > 0.1:
+                status = "ELEVATED RISK"
+            else:
+                status = "PARITY / UNCHANGED"
+
             delta_rows.append({
-                "Metric": label,
-                "Baseline": f"{bv:.1f}",
-                "Simulated": f"{sv:.1f}",
-                "Delta": f"{diff:+.1f}",
-                "Direction": status,
+                "Evaluation Dimension": label,
+                "Audited Baseline": f"{bv:.1f}",
+                "Simulated Value": f"{sv:.1f}",
+                "Variance (Delta)": f"{diff:+.1f}",
+                "Trajectory": status,
             })
 
     if delta_rows:

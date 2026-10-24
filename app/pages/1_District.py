@@ -1,8 +1,9 @@
 """
 SAHAAYA — District Detail Drill-Down.
 
-Shows a single district's risk profile: dimension scores, cluster membership,
-anomaly flags, raw source indicators, and data provenance.
+Civic Intelligence, Editorial Precision aesthetic:
+Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
+and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -11,8 +12,8 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(
-    page_title="District Explorer — SAHAAYA",
-    page_icon="📍",
+    page_title="District Dossier — SAHAAYA",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -28,37 +29,36 @@ from utils import (  # noqa: E402
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
-    render_topbar,
-    render_hero,
-    render_kpi,
-    render_risk_pill,
-    render_sidebar_brand,
-    style_plotly_fig,
+    render_masthead,
+    render_section_header,
+    render_editorial_scorecard,
+    render_editorial_badge,
+    render_sidebar_masthead,
+    style_editorial_figure,
 )
 
 # ---------------------------------------------------------------------------
-# Theme & Top Navigation
+# Theme & Masthead
 # ---------------------------------------------------------------------------
 inject_custom_theme()
-render_topbar(current_page="District Detail")
+render_sidebar_masthead(get_data_status())
 
 # ---------------------------------------------------------------------------
-# Load data & Sidebar
+# Load data
 # ---------------------------------------------------------------------------
 df = load_features()
 clusters_df = load_clusters()
 anomalies_df = load_anomalies()
-render_sidebar_brand(get_data_status())
 
 if df is None:
-    st.error("**features.parquet not found.** Please run the data pipeline first.")
+    st.error("Telemetry store `features.parquet` not located. Please execute the ingestion pipeline.")
     st.stop()
 
 if is_mock_data(df):
-    st.warning("⚠️ Synthetic / mock data detected. Results are illustrative only.")
+    st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# Period & District Selector in Main Control Ribbon
+# Control Ribbon — District Selector
 # ---------------------------------------------------------------------------
 time_col = "period" if "period" in df.columns else ("year" if "year" in df.columns else None)
 if time_col and df[time_col].nunique() > 1:
@@ -69,132 +69,137 @@ else:
 
 districts = sorted(view["district_name"].dropna().unique())
 if not districts:
-    st.error("No district names found in the data.")
+    st.error("No districts located in the active telemetry repository.")
     st.stop()
 
-# Interactive in-page selector ribbon
-col_sel1, col_sel2 = st.columns([2, 1])
+col_sel1, col_sel2 = st.columns([2.5, 1])
 with col_sel1:
-    district = st.selectbox("📍 Select District to Inspect", districts, index=0)
+    district = st.selectbox("Selected Administrative Jurisdiction", districts, index=0)
 with col_sel2:
-    period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Latest Available"
-    st.selectbox("📅 Reporting Period", [period_str], disabled=True)
+    period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Current Administrative Audit"
+    st.selectbox("Reporting Period", [period_str], disabled=True)
 
 row = view[view["district_name"] == district]
 if row.empty:
-    st.error(f"No data found for **{district}**.")
+    st.error(f"No records found for '{district}'.")
     st.stop()
 
 latest = row.iloc[0]
+district_id = latest.get("district_id", "N/A")
+band = latest.get("risk_band", "Moderate")
 
 # ---------------------------------------------------------------------------
-# District Hero Header with Risk Badge
+# Dossier Folio Masthead
 # ---------------------------------------------------------------------------
-band = latest.get("risk_band", "Unknown")
-badge_html = render_risk_pill(band)
-district_id = latest.get("district_id", "")
-
-st.markdown(
-    f"""
-    <div class="hero-banner" style="padding: 22px 28px; margin-top: 10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div>
-                <div class="hero-tag">DISTRICT PROFILE • {district_id}</div>
-                <h1 style="font-size:2.2rem; font-weight:800; margin:0 0 4px 0; color:#0f172a;">{district}</h1>
-                <div style="font-size:0.88rem; color:#64748b; font-weight:500;">
-                    State of Tamil Nadu • Telemetry Assessment
-                </div>
-            </div>
-            <div>
-                {badge_html}
-            </div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+render_masthead(
+    folio_code=f"JURISDICTION DOSSIER · CODE: {district_id}",
+    title=district,
+    deck=f"Diagnostic vulnerability dossier for {district} district, Tamil Nadu. Telemetry synthesized across demographic, nutritional, and institutional service delivery indices.",
+    location_tag=f"TIER: {band.upper()} VULNERABILITY",
 )
 
 # ---------------------------------------------------------------------------
-# KPI Row (Custom Styled)
+# Integrated Scorecard
 # ---------------------------------------------------------------------------
 def _fmt(val, decimals=1):
     if pd.isna(val):
         return "N/A"
     return f"{val:.{decimals}f}"
 
-k_cols = st.columns(6)
+comp_val = latest.get("data_completeness")
+comp_str = f"{comp_val:.0%}" if pd.notna(comp_val) else "N/A"
 
-with k_cols[0]:
-    render_kpi("Overall Score", _fmt(latest.get("overall_score")), icon="🎯", color_accent="#4f46e5", subtitle="Composite Index")
-with k_cols[1]:
-    render_kpi("Education Risk", _fmt(latest.get("edu_risk")), icon="🎓", color_accent="#06b6d4", subtitle="UDISE+ Metrics")
-with k_cols[2]:
-    render_kpi("Health Risk", _fmt(latest.get("health_risk")), icon="🏥", color_accent="#f59e0b", subtitle="NFHS-5 Metrics")
-with k_cols[3]:
-    render_kpi("Employment Risk", _fmt(latest.get("emp_risk")), icon="💼", color_accent="#8b5cf6", subtitle="MGNREGA telemetry")
-with k_cols[4]:
-    render_kpi("Infra Risk", _fmt(latest.get("infra_risk")), icon="⚡", color_accent="#ec4899", subtitle="School & Civic Infra")
-with k_cols[5]:
-    comp_val = latest.get("data_completeness")
-    comp_str = f"{comp_val:.0%}" if pd.notna(comp_val) else "N/A"
-    render_kpi("Completeness", comp_str, icon="🛡️", color_accent="#10b981", subtitle="Audited Signals")
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+render_editorial_scorecard([
+    {
+        "label": "Overall Composite Index",
+        "value": _fmt(latest.get("overall_score")),
+        "note": "Combined risk index",
+        "tag": str(band),
+        "tag_bg": "#FAEDE3" if str(band) in ["High", "Critical"] else "#EAEFEA",
+        "tag_fg": "#8C4318" if str(band) in ["High", "Critical"] else "#264230",
+        "tag_border": "#E8C1A5" if str(band) in ["High", "Critical"] else "#BDCFBF",
+    },
+    {
+        "label": "Education Vulnerability",
+        "value": _fmt(latest.get("edu_risk")),
+        "note": "UDISE+ infrastructure & enrollment",
+    },
+    {
+        "label": "Healthcare Deficit",
+        "value": _fmt(latest.get("health_risk")),
+        "note": "NFHS-5 maternal & child nutrition",
+    },
+    {
+        "label": "Employment Deficit",
+        "value": _fmt(latest.get("emp_risk")),
+        "note": "MGNREGA personday coverage",
+    },
+    {
+        "label": "Civic Infrastructure",
+        "value": _fmt(latest.get("infra_risk")),
+        "note": "Drinking water, sanitation, power",
+    },
+    {
+        "label": "Audited Telemetry",
+        "value": comp_str,
+        "note": "Feature presence across dimensions",
+        "tag": "Verified",
+        "tag_bg": "#EFECE4",
+        "tag_fg": "#444A43",
+        "tag_border": "#D5D0C5",
+    },
+])
 
 # ---------------------------------------------------------------------------
-# Visual Profiling: Dimension Breakdown + Cluster & Anomaly Intelligence
+# Asymmetric Layout: Risk Breakdown vs. Typology & Anomaly Status
 # ---------------------------------------------------------------------------
-col_left, col_right = st.columns([1.1, 1])
+col_left, col_right = st.columns([1.2, 1])
 
 with col_left:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:12px;'>"
-        "📊 Dimension Risk Decomposition"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 01", "Dimension Decomposition", "Normalized Stress Profiles")
 
     dim_data = []
     for label, col in SUB_COLS.items():
         val = latest.get(col)
         if pd.notna(val):
-            dim_data.append({"Dimension": label, "Risk Score": float(val)})
+            dim_data.append({"Dimension": label, "Index": float(val)})
 
     if dim_data:
         dim_df = pd.DataFrame(dim_data)
         fig_dim = px.bar(
             dim_df,
-            x="Risk Score",
+            x="Index",
             y="Dimension",
             orientation="h",
             range_x=[0, 100],
-            color="Risk Score",
+            color="Index",
             color_continuous_scale=[
-                [0.0, "#10b981"],
-                [0.4, "#fbbf24"],
-                [0.7, "#f97316"],
-                [1.0, "#e11d48"],
+                [0.0, "#385E48"],   # Deep sage
+                [0.4, "#827845"],   # Antique olive
+                [0.7, "#BA6835"],   # Terracotta
+                [1.0, "#A83C1F"],   # Burnt sienna
             ],
-            text="Risk Score",
+            text="Index",
         )
         fig_dim.update_traces(
             texttemplate="%{x:.1f}",
-            textposition="inside",
-            marker=dict(line=dict(width=1, color="rgba(0,0,0,0.08)")),
+            textposition="outside",
+            marker=dict(line=dict(width=0.8, color="#253528")),
+            textfont=dict(family="IBM Plex Mono", size=10),
         )
-        style_plotly_fig(fig_dim, height=330)
+        style_editorial_figure(
+            fig_dim,
+            height=300,
+            title=f"Dimensional Burden — {district}",
+            subtitle="Relative intensity across four core pillars (0 = optimal, 100 = distress)",
+        )
         fig_dim.update_layout(coloraxis_showscale=False, yaxis_title="")
         st.plotly_chart(fig_dim, use_container_width=True)
     else:
-        st.info("No dimension risk scores available for this district.")
+        st.info("No dimension scores available for this jurisdiction.")
 
 with col_right:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:12px;'>"
-        "🔮 Peer Cluster & Anomaly Radar"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 02", "Typology & Diagnostic Flags", "Machine Learning Intelligence")
 
     # Cluster Card
     cluster_id = None
@@ -206,31 +211,30 @@ with col_right:
         cluster_id = latest["cluster"]
 
     if cluster_id is not None:
-        cid_str = f"Cluster {int(cluster_id)}"
-        # Siblings
+        cid_str = f"Typology Archetype {int(cluster_id)}"
         if clusters_df is not None:
             siblings = sorted(clusters_df[clusters_df["cluster"] == cluster_id]["district_name"].dropna().unique().tolist())
         else:
             siblings = sorted(view[view["cluster"] == cluster_id]["district_name"].dropna().unique().tolist())
         siblings = [n for n in siblings if n != district]
-        sib_text = ", ".join(siblings[:6]) + (f" + {len(siblings)-6} more" if len(siblings) > 6 else "")
+        sib_text = ", ".join(siblings[:6]) + (f" + {len(siblings)-6} others" if len(siblings) > 6 else "")
 
         st.markdown(
             f"""
-            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px -2px rgba(15,23,42,0.04);">
+            <div style="background:#FFFFFF; border:1px solid #E2DED4; border-left:3px solid #14241D; padding:14px 16px; margin-bottom:14px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.75rem; font-weight:700; color:#4f46e5; text-transform:uppercase; letter-spacing:0.05em;">Cluster Assignment</span>
-                    <span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">{cid_str}</span>
+                    <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; color:#6E756C; text-transform:uppercase; letter-spacing:0.1em;">K-Means Typology</span>
+                    <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#14241D;">{cid_str}</span>
                 </div>
-                <div style="font-size:0.85rem; color:#334155; margin-top:8px; line-height:1.4;">
-                    <b>Statistical Peers:</b> {sib_text if sib_text else "None"}
+                <div style="font-family:'IBM Plex Sans'; font-size:0.84rem; color:#333733; margin-top:6px; line-height:1.45;">
+                    <b>Statistical Peer Cohort:</b> {sib_text if sib_text else "No peer districts identified."}
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
     else:
-        st.info("Cluster data not available. Run the clustering step.")
+        st.info("Typology assignments not compiled.")
 
     # Anomaly Card
     if anomalies_df is not None:
@@ -244,13 +248,13 @@ with col_right:
             if flagged:
                 st.markdown(
                     f"""
-                    <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:14px; padding:16px; box-shadow:0 2px 8px -2px rgba(225,29,72,0.06);">
+                    <div style="background:#F7E5DE; border:1px solid #E5A997; border-left:3px solid #B84324; padding:14px 16px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:700; color:#e11d48; text-transform:uppercase;">🚨 Anomaly Detected</span>
-                            <span style="background:#ffe4e6; color:#9f1239; padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">Score: {_fmt(ascore, 1)}</span>
+                            <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; font-weight:600; color:#8A260F; text-transform:uppercase; letter-spacing:0.1em;">§ Anomaly Flagged</span>
+                            <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#8A260F;">Score: {_fmt(ascore, 1)} / 100</span>
                         </div>
-                        <div style="font-size:0.85rem; color:#881337; margin-top:8px; line-height:1.4;">
-                            <b>Unusual Feature Drivers:</b> {unusual}
+                        <div style="font-family:'IBM Plex Sans'; font-size:0.82rem; color:#611A0B; margin-top:6px; line-height:1.45;">
+                            <b>Divergent Features:</b> <code>{unusual}</code>
                         </div>
                     </div>
                     """,
@@ -259,30 +263,23 @@ with col_right:
             else:
                 st.markdown(
                     f"""
-                    <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:14px; padding:16px; box-shadow:0 2px 8px -2px rgba(16,185,129,0.04);">
+                    <div style="background:#EAEFEA; border:1px solid #BDCFBF; border-left:3px solid #385E48; padding:14px 16px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:700; color:#065f46; text-transform:uppercase;">✅ Standard Distribution Pattern</span>
-                            <span style="background:#d1fae5; color:#064e3b; padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">Score: {_fmt(ascore, 1)}</span>
+                            <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; font-weight:600; color:#264230; text-transform:uppercase; letter-spacing:0.1em;">Standard Distribution Envelope</span>
+                            <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#264230;">Score: {_fmt(ascore, 1)} / 100</span>
                         </div>
-                        <div style="font-size:0.85rem; color:#065f46; margin-top:8px;">
-                            No anomalous deviation detected relative to regional peer patterns.
+                        <div style="font-family:'IBM Plex Sans'; font-size:0.82rem; color:#264230; margin-top:6px;">
+                            No anomalous multi-variate deviation detected relative to regional peer trajectories.
                         </div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
-
 # ---------------------------------------------------------------------------
-# Raw Indicator Table & Provenance
+# Raw Indicator Telemetry Table
 # ---------------------------------------------------------------------------
-st.markdown(
-    "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:12px;'>"
-    "📑 Source Indicator Telemetry"
-    "</div>",
-    unsafe_allow_html=True,
-)
+render_section_header("SEC. 03", "Primary Telemetry Ledger", "Raw Survey Observations")
 
 standard_cols = {
     "district_id", "district_name", "state", "period", "year",
@@ -294,17 +291,19 @@ indicator_cols = [c for c in row.columns if c not in standard_cols]
 
 if indicator_cols:
     indicator_data = row[indicator_cols].T.copy()
-    indicator_data.columns = ["Reported Value"]
-    indicator_data.index.name = "Telemetry Indicator"
-    indicator_data["Reported Value"] = indicator_data["Reported Value"].apply(
+    indicator_data.columns = ["Reported Metric"]
+    indicator_data.index.name = "Telemetry Indicator Field"
+    indicator_data["Reported Metric"] = indicator_data["Reported Metric"].apply(
         lambda v: f"{v:,.2f}" if isinstance(v, (int, float)) and pd.notna(v) else ("N/A" if pd.isna(v) else str(v))
     ).astype(str)
     st.dataframe(indicator_data, use_container_width=True)
 else:
-    st.info("No raw source indicators found beyond composite risk scores.")
+    st.info("No raw telemetry fields found beyond composite indices.")
 
-with st.expander("🔍 Telemetry Provenance"):
-    st.markdown(f"**District ID:** `{district_id}`")
-    if time_col and pd.notna(latest.get(time_col)):
-        st.markdown(f"**Observation Period:** `{latest[time_col]}`")
-    st.caption("All indicators are audited and normalized against Tamil Nadu state distributions.")
+with st.expander("Jurisdiction Telemetry Provenance"):
+    st.markdown(
+        f"- **Canonical Identifier:** `{district_id}`\n"
+        f"- **Observation Window:** `{latest.get(time_col, 'Current')}`\n"
+        f"- **Constituent Features Audited:** `{len(indicator_cols)} variables`\n"
+        f"- **Standardization Rule:** Min-max feature clipping against historical state extrema."
+    )

@@ -1,9 +1,9 @@
 """
 SAHAAYA Home — Statewide social-vulnerability dashboard for Tamil Nadu.
 
-Displays KPI summary, choropleth / bar-chart map, top-risk table,
-and risk-band distribution.  All data comes from the processed pipeline
-outputs; if they are missing the page shows setup instructions instead.
+Civic Intelligence, Editorial Precision aesthetic:
+Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
+and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(
-    page_title="SAHAAYA — Social Vulnerability Radar",
-    page_icon="⚡",
+    page_title="SAHAAYA — Civic Vulnerability Observatory",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -21,8 +21,6 @@ st.set_page_config(
 from utils import (  # noqa: E402
     load_features,
     load_geojson,
-    load_clusters,
-    load_anomalies,
     get_data_status,
     is_mock_data,
     GEO_NAME_KEY,
@@ -32,99 +30,78 @@ from utils import (  # noqa: E402
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
-    render_topbar,
-    render_hero,
-    render_kpi,
-    render_sidebar_brand,
-    style_plotly_fig,
+    render_masthead,
+    render_section_header,
+    render_editorial_scorecard,
+    render_sidebar_masthead,
+    style_editorial_figure,
+    MAP_COLORSCALE,
 )
 
 # ---------------------------------------------------------------------------
-# Theme & Top Navigation
+# Theme & Masthead
 # ---------------------------------------------------------------------------
 inject_custom_theme()
-render_topbar(current_page="Overview")
+render_sidebar_masthead(get_data_status())
 
-render_hero(
-    tag="AI CIVIC INTELLIGENCE",
-    title="Tamil Nadu Social Vulnerability & Early Warning",
-    description="Multi-dimensional risk radar synthesizing education (UDISE+), health (NFHS-5), and infrastructure signals to support evidence-based policy targeting and proactive resource allocation.",
+render_masthead(
+    folio_code="VOL. IV · DISPATCH 2026.10 · STATE REGISTRY SURVEY",
+    title="Tamil Nadu Social Vulnerability & Early Warning Observatory",
+    deck="Multi-sectoral early warning radar synthesizing educational delivery (UDISE+), public health telemetry (NFHS-5), and civic infrastructure across 38 canonical administrative districts.",
+    location_tag="TAMIL NADU · 11°07' N, 78°39' E",
 )
 
 # ---------------------------------------------------------------------------
-# Sidebar — Branded Status Panel
-# ---------------------------------------------------------------------------
-status = get_data_status()
-render_sidebar_brand(status)
-
-# ---------------------------------------------------------------------------
-# Load features & production guard
+# Data Load & Verification
 # ---------------------------------------------------------------------------
 df = load_features()
 
 if df is None:
-    st.error("**features.parquet not found.**")
-    st.info(
-        "Run the data pipeline first to generate the processed data:\n\n"
-        "```bash\n"
-        "python -m src.pipeline\n"
-        "```\n\n"
-        "The pipeline will create `data/processed/features.parquet` and other outputs."
-    )
+    st.error("Telemetry store `features.parquet` not located. Please execute the ingestion pipeline.")
+    st.info("Run `python src/pipeline.py` to compile district feature sets.")
     st.stop()
 
 if is_mock_data(df):
-    st.warning(
-        "⚠️ **Synthetic / Mock dataset detected.** "
-        "Results shown are illustrative. Run the real ingestion pipeline to update."
-    )
+    st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# In-Page Control Ribbon (No need to search the sidebar)
+# Control Ribbon — Flush Editorial Filter Strip
 # ---------------------------------------------------------------------------
 time_col = "period" if "period" in df.columns else ("year" if "year" in df.columns else None)
-metric_map = {"Overall Composite Risk": "overall_score", **SUB_COLS}
+metric_map = {"Overall Composite Vulnerability": "overall_score", **SUB_COLS}
 
-col_filter1, col_filter2, col_filter3 = st.columns([1.5, 2.5, 1])
+col_f1, col_f2, col_f3 = st.columns([1.5, 2.5, 1])
 
-with col_filter1:
+with col_f1:
     if time_col and df[time_col].nunique() > 1:
         periods = sorted(df[time_col].dropna().unique(), reverse=True)
-        chosen = st.selectbox("📅 Reporting Period", periods, index=0)
+        chosen = st.selectbox("Reporting Horizon", periods, index=0)
         view = df[df[time_col] == chosen].copy()
     else:
-        chosen = df[time_col].iloc[0] if time_col and not df.empty else "Latest Available"
-        st.selectbox("📅 Reporting Period", [str(chosen)], disabled=True)
+        chosen = df[time_col].iloc[0] if time_col and not df.empty else "Current Administrative Audit"
+        st.selectbox("Reporting Horizon", [str(chosen)], disabled=True)
         view = df.copy()
 
-with col_filter2:
-    metric_label = st.selectbox(
-        "📊 Target Dimension / Score",
-        list(metric_map.keys()),
-        index=0,
-    )
+with col_f2:
+    metric_label = st.selectbox("Evaluated Risk Dimension", list(metric_map.keys()), index=0)
     metric_col = metric_map[metric_label]
 
-with col_filter3:
-    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+with col_f3:
+    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
     st.markdown(
-        f"<div style='text-align:right; font-size:0.75rem; color:#64748b; font-weight:600; padding-top:6px;'>"
-        f"Districts Loaded: <b>{view['district_name'].nunique()}</b>"
+        f"<div style='font-family:\"IBM Plex Mono\"; font-size:0.7rem; color:#6E756C; text-align:right; padding-top:6px;'>"
+        f"DISTRICTS: <b>{view['district_name'].nunique()}</b>"
         f"</div>",
         unsafe_allow_html=True,
     )
 
 if metric_col not in view.columns:
-    st.warning(f"Column `{metric_col}` not found in dataset.")
+    st.warning(f"Dimension '{metric_col}' not found in active dataset.")
     st.stop()
 
-st.markdown("<div style='margin-bottom: 18px;'></div>", unsafe_allow_html=True)
-
 # ---------------------------------------------------------------------------
-# KPI Cards
+# Integrated Editorial Scorecard (Replaces Generic Floating Cards)
 # ---------------------------------------------------------------------------
-k1, k2, k3, k4 = st.columns(4)
-
 n_districts = view["district_name"].nunique()
 avg_score = view[metric_col].mean()
 high_crit = (
@@ -138,80 +115,58 @@ completeness = (
     else "N/A"
 )
 
-with k1:
-    render_kpi(
-        label="Districts Monitored",
-        value=n_districts,
-        icon="🏛️",
-        subtitle="Canonical district coverage",
-        color_accent="#4f46e5",
-        badge_text="Active",
-        badge_color="#e0e7ff",
-        badge_text_color="#3730a3",
-    )
-
-with k2:
-    render_kpi(
-        label=f"Avg {metric_label.split()[0]} Score",
-        value=f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A",
-        icon="📈",
-        subtitle="Normalized index (0-100 scale)",
-        color_accent="#06b6d4",
-        badge_text="Benchmark",
-        badge_color="#e0f2fe",
-        badge_text_color="#0369a1",
-    )
-
-with k3:
-    render_kpi(
-        label="High / Critical Distress",
-        value=high_crit,
-        icon="🚨",
-        subtitle="Districts in upper risk quartile",
-        color_accent="#f43f5e",
-        badge_text="Priority Watch",
-        badge_color="#ffe4e6",
-        badge_text_color="#9f1239",
-    )
-
-with k4:
-    render_kpi(
-        label="Data Completeness",
-        value=completeness,
-        icon="🛡️",
-        subtitle="Cross-sector indicator parity",
-        color_accent="#10b981",
-        badge_text="Audited",
-        badge_color="#ecfdf5",
-        badge_text_color="#065f46",
-    )
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+render_editorial_scorecard([
+    {
+        "label": "Jurisdictions Audited",
+        "value": str(n_districts),
+        "note": "Canonical Tamil Nadu administrative units",
+        "tag": "Synchronized",
+        "tag_bg": "#EAEFEA",
+        "tag_fg": "#264230",
+        "tag_border": "#BDCFBF",
+    },
+    {
+        "label": f"Mean {metric_label.split()[0]} Index",
+        "value": f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A",
+        "note": "Normalized 0–100 scale (higher indicates elevated stress)",
+    },
+    {
+        "label": "High & Critical Quartile",
+        "value": str(high_crit),
+        "note": "Districts requiring immediate intervention",
+        "tag": "Priority Alert",
+        "tag_bg": "#F7E5DE",
+        "tag_fg": "#8A260F",
+        "tag_border": "#E5A997",
+    },
+    {
+        "label": "Telemetry Completeness",
+        "value": str(completeness),
+        "note": "Mean multi-sector feature parity across inputs",
+        "tag": "Audited",
+        "tag_bg": "#EFECE4",
+        "tag_fg": "#444A43",
+        "tag_border": "#D5D0C5",
+    },
+])
 
 # ---------------------------------------------------------------------------
-# Main Interactive Canvas — Spatial Map & Top-Risk Analysis
+# Main Asymmetric Canvas — Cartographic View & Watchlist
 # ---------------------------------------------------------------------------
-col_map, col_details = st.columns([3, 2])
+col_map, col_tables = st.columns([1.5, 1])
 
 with col_map:
+    render_section_header("SEC. 01", "Geographic Vulnerability Distribution", "Spatial Deciling")
+
     geo = load_geojson()
     if geo is not None:
-        # Custom elegant continuous scale (Emerald -> Light Amber -> Orange -> Deep Rose)
-        custom_scale = [
-            [0.0, "#10b981"],
-            [0.35, "#34d399"],
-            [0.55, "#fbbf24"],
-            [0.75, "#f97316"],
-            [1.0, "#e11d48"],
-        ]
-
         fig_map = px.choropleth(
             view,
             geojson=geo,
             locations="district_name",
             featureidkey=GEO_NAME_KEY,
             color=metric_col,
-            color_continuous_scale=custom_scale,
+            color_continuous_scale=MAP_COLORSCALE,
             range_color=(0, 100),
             hover_name="district_name",
             hover_data={
@@ -219,27 +174,38 @@ with col_map:
                 metric_col: ":.1f",
                 "risk_band": True if "risk_band" in view.columns else False,
             },
-            labels={metric_col: "Risk Score", "risk_band": "Risk Band"},
+            labels={metric_col: "Index", "risk_band": "Risk Band"},
         )
         fig_map.update_geos(
             fitbounds="locations",
             visible=False,
             bgcolor="rgba(0,0,0,0)",
         )
-        style_plotly_fig(fig_map, height=620, title=f"Spatial Geographic Distribution — {metric_label}")
+        fig_map.update_traces(
+            marker_line_width=0.6,
+            marker_line_color="#2B362F",
+        )
+        style_editorial_figure(
+            fig_map,
+            height=600,
+            title="Cartographic Survey",
+            subtitle=f"Spatial deciling across Tamil Nadu · {metric_label}",
+        )
         fig_map.update_layout(
             coloraxis_colorbar=dict(
-                title="Index",
-                thickness=12,
-                len=0.7,
+                title=dict(text="Index", font=dict(family="IBM Plex Mono", size=10)),
+                thickness=10,
+                len=0.65,
                 x=0.98,
-                bgcolor="rgba(255,255,255,0.7)",
-                tickfont=dict(size=10, family="Plus Jakarta Sans"),
+                tickfont=dict(size=9, family="IBM Plex Mono", color="#5E655D"),
+                bgcolor="rgba(247, 245, 238, 0.8)",
+                bordercolor="#E2DED4",
+                borderwidth=1,
             )
         )
         st.plotly_chart(fig_map, use_container_width=True)
     else:
-        st.info("District boundary GeoJSON not found. Displaying sorted comparative ranking.")
+        st.info("Boundary geometry not detected. Showing rank-ordered bar chart.")
         sorted_view = view.sort_values(metric_col, ascending=True)
         fig_bar = px.bar(
             sorted_view,
@@ -247,21 +213,19 @@ with col_map:
             y="district_name",
             orientation="h",
             color=metric_col,
-            color_continuous_scale="Viridis",
+            color_continuous_scale=MAP_COLORSCALE,
             range_color=(0, 100),
-            labels={metric_col: "Index Score", "district_name": "District"},
+            labels={metric_col: "Index", "district_name": "District"},
         )
-        style_plotly_fig(fig_bar, height=max(450, len(sorted_view) * 22), title=f"Comparative Ranking — {metric_label}")
+        style_editorial_figure(
+            fig_bar,
+            height=max(450, len(sorted_view) * 20),
+            title="Rank-Ordered Distribution",
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
 
-with col_details:
-    # --- Top-10 Priority Watch ---
-    st.markdown(
-        f"<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:8px;'>"
-        f"🚨 Priority Watchlist — Top 10 by {metric_label}"
-        f"</div>",
-        unsafe_allow_html=True,
-    )
+with col_tables:
+    render_section_header("SEC. 02", "Priority Watchlist", f"Upper Decile in {metric_label}")
 
     display_cols = ["district_name", metric_col]
     if "risk_band" in view.columns:
@@ -272,21 +236,17 @@ with col_details:
         .head(10)[display_cols]
         .copy()
     )
-    rename = {"district_name": "District", metric_col: "Score"}
+    rename = {"district_name": "District", metric_col: "Index"}
     if "risk_band" in top.columns:
         rename["risk_band"] = "Risk Band"
     top.rename(columns=rename, inplace=True)
-    top["Score"] = top["Score"].round(1)
+    top["Index"] = top["Index"].round(1)
 
-    st.dataframe(
-        top,
-        hide_index=True,
-        use_container_width=True,
-    )
+    st.dataframe(top, hide_index=True, use_container_width=True)
 
-    st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
+    render_section_header("SEC. 03", "Statewide Risk-Band Census", "Categorical Classification")
 
-    # --- Risk Band Distribution ---
     if "risk_band" in view.columns:
         counts = (
             view["risk_band"]
@@ -309,24 +269,31 @@ with col_details:
         )
         fig_band.update_traces(
             textposition="outside",
-            marker=dict(line=dict(width=1, color="rgba(0,0,0,0.1)")),
+            marker=dict(line=dict(width=1, color="#2D332D")),
+            textfont=dict(family="IBM Plex Mono", size=10),
         )
-        style_plotly_fig(fig_band, height=270, title="Statewide Risk-Band Census")
+        style_editorial_figure(
+            fig_band,
+            height=250,
+            title="Risk Tier Census",
+            subtitle="Frequency distribution across 4 canonical tiers",
+        )
         fig_band.update_layout(showlegend=False)
         st.plotly_chart(fig_band, use_container_width=True)
 
 # ---------------------------------------------------------------------------
-# Data Provenance Expander
+# Editorial Colophon & Methodology
 # ---------------------------------------------------------------------------
-with st.expander("🔍 Telemetry & Data Provenance Details"):
-    c_p1, c_p2 = st.columns(2)
-    with c_p1:
-        if "period" in view.columns:
-            st.markdown(f"**Reporting Period:** `{', '.join(map(str, df['period'].dropna().unique()))}`")
-        st.markdown(f"**Canonical District Count:** `{len(view)}`")
-        if "data_completeness" in view.columns:
-            st.markdown(f"**Mean Feature Completeness:** `{view['data_completeness'].mean():.1%}`")
-    with c_p2:
+with st.expander("Methodological Notes & Ingestion Provenance"):
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            "**Data Sources & Normalization**\n\n"
+            "Indices are computed using min-max linear feature scaling normalized over historical state bounds. "
+            "Primary inputs include UDISE+ school infrastructure and enrollment telemetry, NFHS-5 district nutritional indicators, "
+            "and MGNREGA rural employment person-day metrics."
+        )
+    with c2:
         standard = {
             "district_id", "district_name", "state", "period", "year",
             "edu_risk", "health_risk", "emp_risk", "infra_risk",
@@ -334,6 +301,9 @@ with st.expander("🔍 Telemetry & Data Provenance Details"):
             "cluster", "anomaly_flag", "anomaly_score", "pred_next_score",
         }
         source_cols = [c for c in df.columns if c not in standard]
-        st.markdown(f"**Source Indicators Integrated:** `{len(source_cols)} indicators`")
-        if source_cols:
-            st.caption(", ".join(source_cols[:12]) + ("..." if len(source_cols) > 12 else ""))
+        st.markdown(
+            f"**Audit Parameters**\n\n"
+            f"- Observation Period: `{view[time_col].iloc[0] if time_col else 'Current'}`\n"
+            f"- Integrated Telemetry Fields: `{len(source_cols)} indicators`\n"
+            f"- Canonical Geometries: `38 districts (Tamil Nadu Survey 2021-2024)`"
+        )

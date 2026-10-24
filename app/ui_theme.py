@@ -1,8 +1,9 @@
 """
-SAHAAYA — Executive Design System & UI Theme Engine.
+SAHAAYA — Civic Intelligence, Editorial Precision Design System.
 
-Provides luxury styling, Google Fonts, glassmorphism, responsive navigation ribbons,
-metric cards, and consistent Plotly styling for the SAHAAYA platform.
+Inspired by high-end editorial cartography, civic research institutes, and
+state data observatories. Features warm ivory paper surfaces, deep forest-green
+accents, editorial Newsreader serif typography, and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -11,399 +12,415 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 # ---------------------------------------------------------------------------
-# Brand Color Palette
+# Editorial Color System
 # ---------------------------------------------------------------------------
 PALETTE = {
-    "primary": "#4f46e5",       # Indigo 600
-    "primary_dark": "#3730a3",  # Indigo 800
-    "primary_light": "#e0e7ff", # Indigo 100
-    "accent_cyan": "#06b6d4",   # Cyan 500
-    "accent_violet": "#8b5cf6", # Violet 500
-    "bg_canvas": "#f8fafc",     # Slate 50
-    "card_bg": "#ffffff",
-    "text_dark": "#0f172a",     # Slate 900
-    "text_muted": "#64748b",    # Slate 500
-    "border": "#e2e8f0",        # Slate 200
-    "risk_low": "#10b981",      # Emerald
-    "risk_mod": "#f59e0b",      # Amber
-    "risk_high": "#f97316",     # Orange
-    "risk_crit": "#e11d48",     # Crimson Rose
+    "bg_ivory": "#F7F5EE",        # Primary ivory canvas
+    "surface_parchment": "#FFFFFF",# Crisp paper white
+    "surface_tint": "#EFECE4",    # Muted linen tint
+    "forest_deep": "#14241D",     # Deep forest green (surfaces & sidebar)
+    "forest_mid": "#223B2F",      # Mid forest green
+    "forest_accent": "#385E48",   # Muted sage/forest
+    "burnt_orange": "#B84324",    # Restrained focal alert
+    "terracotta": "#BA6835",      # Warm alert
+    "antique_olive": "#827845",   # Moderate indicator
+    "ink_black": "#181A18",       # Primary reading typography
+    "ink_muted": "#555B54",       # Secondary prose
+    "ink_faint": "#8A9188",       # Metadata & coordinates
+    "rule_line": "#E2DED4",       # Hairline dividers
+    "rule_dark": "#2B3F34",       # Hairline on dark surfaces
 }
 
-BAND_STYLING = {
-    "Low": {"bg": "#ecfdf5", "text": "#065f46", "border": "#a7f3d0", "dot": "#10b981"},
-    "Moderate": {"bg": "#fffbeb", "text": "#92400e", "border": "#fde68a", "dot": "#f59e0b"},
-    "High": {"bg": "#fff7ed", "text": "#9a3412", "border": "#fed7aa", "dot": "#f97316"},
-    "Critical": {"bg": "#fff1f2", "text": "#9f1239", "border": "#fecdd3", "dot": "#e11d48"},
-}
-
-PAGES = [
-    {"label": "Overview", "icon": "⚡", "path": "Home.py"},
-    {"label": "District Detail", "icon": "📍", "path": "pages/1_District.py"},
-    {"label": "Risk Clusters", "icon": "🔮", "path": "pages/2_Clusters.py"},
-    {"label": "Anomaly Radar", "icon": "🚨", "path": "pages/3_Anomalies.py"},
-    {"label": "Simulator", "icon": "🧪", "path": "pages/4_Simulator.py"},
+# Cartographic Continuous Scale for Maps
+MAP_COLORSCALE = [
+    [0.00, "#EAE5D9"],  # Baseline / Lowest vulnerability (Linen)
+    [0.25, "#BDCBB9"],  # Low vulnerability (Pale Sage)
+    [0.50, "#8C9D86"],  # Moderate (Sage Forest)
+    [0.75, "#C87C47"],  # High (Warm Ochre)
+    [1.00, "#A83C1F"],  # Critical (Burnt Sienna)
 ]
 
+BAND_EDITORIAL_STYLES = {
+    "Low": {"bg": "#EAEFEA", "fg": "#264230", "border": "#BDCFBF", "label": "Low Vulnerability"},
+    "Moderate": {"bg": "#F5F3E4", "fg": "#5E5624", "border": "#D8D2A8", "label": "Moderate Vulnerability"},
+    "High": {"bg": "#FAEDE3", "fg": "#8C4318", "border": "#E8C1A5", "label": "High Vulnerability"},
+    "Critical": {"bg": "#F7E5DE", "fg": "#8A260F", "border": "#E5A997", "label": "Critical Vulnerability"},
+}
+
 # ---------------------------------------------------------------------------
-# Custom CSS Injection
+# Global CSS Injection
 # ---------------------------------------------------------------------------
 def inject_custom_theme() -> None:
-    """Inject global modern CSS styling and Google Fonts."""
+    """Inject typography, layout rules, sidebar styling, and editorial components."""
     css = """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-    /* Global Typography & Canvas */
+    /* Global Paper Canvas */
     html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        color: #0f172a;
+        font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: #181A18;
     }
 
-    /* Ambient Mesh Gradient Canvas */
     .stApp {
-        background-color: #f8fafc;
+        background-color: #F7F5EE !important;
         background-image:
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-            radial-gradient(at 50% 100%, rgba(244, 63, 94, 0.04) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
-        background-attachment: fixed;
+            linear-gradient(to right, rgba(226, 222, 212, 0.25) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(226, 222, 212, 0.25) 1px, transparent 1px);
+        background-size: 48px 48px;
     }
 
-    /* Headings */
-    h1, h2, h3, h4, .stTitle {
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.025em !important;
-        color: #0f172a !important;
+    /* Headings — Editorial Newsreader Serif */
+    h1, h2, h3, .editorial-heading {
+        font-family: 'Newsreader', Georgia, serif !important;
+        font-weight: 500 !important;
+        color: #14241D !important;
+        letter-spacing: -0.015em !important;
     }
 
-    /* Top Brand & Navbar Bar */
-    .sahaaya-topbar {
+    h4, h5, h6 {
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-weight: 600 !important;
+        color: #181A18 !important;
+        letter-spacing: 0.01em !important;
+    }
+
+    /* Masthead & Folio Header */
+    .folio-header {
+        border-bottom: 2px solid #14241D;
+        padding-bottom: 14px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .folio-meta {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #555B54;
+    }
+
+    .masthead-title {
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 2.25rem;
+        font-weight: 500;
+        line-height: 1.15;
+        color: #14241D;
+        margin: 4px 0 6px 0;
+    }
+
+    .masthead-deck {
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        color: #444A43;
+        max-width: 860px;
+        margin: 0;
+    }
+
+    .registration-mark {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        color: #8A9188;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 14px 22px;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(226, 232, 240, 0.85);
-        border-radius: 18px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+        gap: 8px;
     }
 
-    .sahaaya-brand {
+    .registration-mark::before {
+        content: "§";
+        color: #B84324;
+        font-size: 0.85rem;
+    }
+
+    /* Integrated Editorial Scorecard (Replaces Generic Floating Cards) */
+    .editorial-scorecard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        background: #FFFFFF;
+        border: 1px solid #E2DED4;
+        border-top: 3px solid #14241D;
+        margin-bottom: 28px;
+    }
+
+    .scorecard-cell {
+        padding: 16px 20px;
+        border-right: 1px solid #E2DED4;
+        position: relative;
+    }
+
+    .scorecard-cell:last-child {
+        border-right: none;
+    }
+
+    .scorecard-label {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6E756C;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .scorecard-value {
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 2.1rem;
+        font-weight: 600;
+        line-height: 1;
+        color: #14241D;
+        font-variant-numeric: tabular-nums;
+        margin-bottom: 4px;
+    }
+
+    .scorecard-note {
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 0.74rem;
+        color: #666C63;
+        line-height: 1.35;
+    }
+
+    .scorecard-tag {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 1px;
+        display: inline-block;
+        margin-top: 4px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    /* Control Bar — Architectural & Flush */
+    .control-strip {
+        background: #EFECE4;
+        border: 1px solid #E0DCD3;
+        padding: 12px 18px;
+        margin-bottom: 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    /* Section Divider Rule */
+    .section-rule {
         display: flex;
         align-items: center;
         gap: 12px;
+        margin: 28px 0 16px 0;
+        border-bottom: 1px solid #E2DED4;
+        padding-bottom: 8px;
     }
 
-    .brand-glyph {
-        width: 38px;
-        height: 38px;
-        border-radius: 11px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        box-shadow: 0 6px 14px -3px rgba(79, 70, 229, 0.4);
-    }
-
-    .brand-title {
-        font-family: 'Outfit', sans-serif;
-        font-weight: 800;
-        font-size: 1.25rem;
-        letter-spacing: -0.03em;
-        background: linear-gradient(135deg, #0f172a 0%, #3730a3 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .brand-subtitle {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .live-pulse-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        border-radius: 9999px;
-        color: #065f46;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-    }
-
-    .pulse-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background-color: #10b981;
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-        animation: pulseAnimation 2s infinite;
-    }
-
-    @keyframes pulseAnimation {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    /* Hero Banner Component */
-    .hero-banner {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        border-radius: 20px;
-        padding: 26px 30px;
-        margin-bottom: 28px;
-        box-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.05);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 50%, #8b5cf6 100%);
-    }
-
-    .hero-tag {
-        display: inline-block;
-        padding: 4px 10px;
-        background: #e0e7ff;
-        color: #4338ca;
+    .section-code {
+        font-family: 'IBM Plex Mono', monospace;
         font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        border-radius: 6px;
-        margin-bottom: 8px;
-    }
-
-    .hero-title {
-        font-size: 1.85rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0 0 6px 0;
-        line-height: 1.2;
-    }
-
-    .hero-desc {
-        color: #475569;
-        font-size: 0.95rem;
-        line-height: 1.5;
-        margin: 0;
-        max-width: 900px;
-    }
-
-    /* Ultra-Luxe Metric Cards */
-    .kpi-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(226, 232, 240, 0.85);
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 14px 28px -5px rgba(79, 70, 229, 0.1);
-        border-color: rgba(99, 102, 241, 0.4);
-    }
-
-    .kpi-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-    }
-
-    .kpi-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .kpi-icon-pill {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        background: #f1f5f9;
-    }
-
-    .kpi-value {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.95rem;
-        font-weight: 800;
-        color: #0f172a;
-        line-height: 1.1;
-        margin-bottom: 6px;
-    }
-
-    .kpi-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.72rem;
         font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 6px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #B84324;
     }
 
-    /* In-Page Ribbon Card */
-    .filter-ribbon {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        border-radius: 14px;
-        padding: 14px 18px;
-        margin-bottom: 22px;
-        box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.03);
+    .section-name {
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #14241D;
     }
 
-    /* Modern Streamlit Sidebar Overhaul */
+    /* Deep Forest-Green Sidebar */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-        border-right: 1px solid #e2e8f0 !important;
-        box-shadow: 2px 0 16px -4px rgba(15, 23, 42, 0.04);
+        background-color: #14241D !important;
+        border-right: 1px solid #233B2F !important;
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #E6E4DD !important;
     }
 
     [data-testid="stSidebar"] .stMarkdown h1,
     [data-testid="stSidebar"] .stMarkdown h2,
     [data-testid="stSidebar"] .stMarkdown h3 {
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 1.05rem !important;
-        letter-spacing: -0.01em !important;
-        color: #1e293b !important;
+        font-family: 'Newsreader', Georgia, serif !important;
+        color: #FAF8F2 !important;
+        font-weight: 500 !important;
     }
 
-    /* Style sidebar nav buttons into sleek rounded chips */
+    /* Sidebar Navigation Links */
+    [data-testid="stSidebarNav"] {
+        border-top: 1px solid #233B2F;
+        border-bottom: 1px solid #233B2F;
+        padding: 12px 0 !important;
+        margin: 12px 0 !important;
+    }
+
     [data-testid="stSidebarNav"] li a {
-        border-radius: 10px !important;
-        margin: 3px 8px !important;
-        padding: 8px 14px !important;
-        font-weight: 600 !important;
+        border-radius: 0px !important;
+        padding: 9px 16px !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-weight: 400 !important;
         font-size: 0.88rem !important;
-        color: #475569 !important;
-        transition: all 0.2s ease !important;
+        color: #B5BDB6 !important;
+        background: transparent !important;
+        border-left: 2px solid transparent !important;
+        transition: all 0.15s ease !important;
     }
 
     [data-testid="stSidebarNav"] li a:hover {
-        background: #f1f5f9 !important;
-        color: #4f46e5 !important;
-        transform: translateX(3px);
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: #FAF8F2 !important;
+        border-left: 2px solid #758A7A !important;
     }
 
     [data-testid="stSidebarNav"] li a[aria-current="page"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.35) !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        border-left: 2px solid #C85A2A !important;
     }
 
-    /* Dataframe / Table styling */
+    /* Sidebar Header Masthead */
+    .sidebar-masthead {
+        padding: 18px 12px 14px 12px;
+        border-bottom: 1px solid #233B2F;
+        margin-bottom: 12px;
+    }
+
+    .sidebar-logotype {
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #FAF8F2 !important;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .sidebar-descriptor {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8D9A8F !important;
+    }
+
+    .sidebar-meta-panel {
+        background: #1B3026;
+        border: 1px solid #294435;
+        padding: 12px 14px;
+        margin-top: 14px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        line-height: 1.6;
+    }
+
+    /* Streamlit Tables & Dataframe */
     [data-testid="stDataFrame"] {
-        border-radius: 14px !important;
-        overflow: hidden;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04) !important;
+        border: 1px solid #E2DED4 !important;
+        border-radius: 0px !important;
+        background: #FFFFFF !important;
     }
 
-    /* Sleek Tabs */
+    /* Tabs — Quiet Editorial Underline Style */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px !important;
-        background: rgba(241, 245, 249, 0.8) !important;
-        padding: 5px !important;
-        border-radius: 12px !important;
-        border: 1px solid #e2e8f0 !important;
+        background: transparent !important;
+        border-bottom: 1px solid #E2DED4 !important;
+        gap: 24px !important;
+        padding: 0 0 1px 0 !important;
     }
 
     .stTabs [data-baseweb="tab"] {
-        border-radius: 9px !important;
-        font-weight: 600 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
         font-size: 0.88rem !important;
-        padding: 8px 16px !important;
-        color: #64748b !important;
+        font-weight: 500 !important;
+        color: #6E756C !important;
         background: transparent !important;
+        border-radius: 0px !important;
         border: none !important;
+        border-bottom: 2px solid transparent !important;
+        padding: 8px 4px !important;
     }
 
     .stTabs [aria-selected="true"] {
-        background: #ffffff !important;
-        color: #4f46e5 !important;
-        box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.08) !important;
+        color: #14241D !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid #14241D !important;
+    }
+
+    /* Inputs, Selectboxes & Sliders */
+    .stSelectbox label, .stSlider label {
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.74rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: #4A5149 !important;
+    }
+
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid #D5D0C5 !important;
+        border-radius: 1px !important;
+        color: #181A18 !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* Buttons — Crisp Minimal Radius */
+    .stButton > button {
+        background-color: #14241D !important;
+        color: #FAF8F2 !important;
+        border: 1px solid #14241D !important;
+        border-radius: 1px !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        padding: 8px 18px !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .stButton > button:hover {
+        background-color: #223B2F !important;
+        border-color: #223B2F !important;
+        color: #FFFFFF !important;
+        box-shadow: none !important;
     }
 
     /* Expanders */
     .streamlit-expanderHeader {
-        background: rgba(255, 255, 255, 0.8) !important;
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        font-size: 0.92rem !important;
-        border: 1px solid #e2e8f0 !important;
+        background-color: #F2EFE8 !important;
+        border: 1px solid #E2DED4 !important;
+        border-radius: 0px !important;
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 0.88rem !important;
+        color: #181A18 !important;
     }
 
-    /* Buttons */
-    .stButton > button {
-        border-radius: 10px !important;
-        font-weight: 600 !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        transition: all 0.2s ease !important;
-        border: 1px solid #cbd5e1 !important;
+    /* Risk Badge Pills — Minimal Rectangular */
+    .editorial-badge {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 1px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        display: inline-block;
     }
 
-    .stButton > button:hover {
-        border-color: #4f46e5 !important;
-        color: #4f46e5 !important;
-        box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.15) !important;
-        transform: translateY(-1px);
-    }
-
-    /* Hide standard Streamlit header bar decoration */
+    /* Header Bar Clean */
     header[data-testid="stHeader"] {
         background: transparent !important;
-    }
-
-    /* Risk band pills */
-    .risk-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-    }
-    .risk-pill-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
     }
     </style>
     """
@@ -411,192 +428,214 @@ def inject_custom_theme() -> None:
 
 
 # ---------------------------------------------------------------------------
-# UI Components
+# Editorial Layout Components
 # ---------------------------------------------------------------------------
-def render_topbar(current_page: str = "Overview") -> None:
-    """Render top floating brand bar."""
-    st.markdown(
-        """
-        <div class="sahaaya-topbar">
-            <div class="sahaaya-brand">
-                <div class="brand-glyph">⚡</div>
-                <div>
-                    <div class="brand-title">SAHAAYA</div>
-                    <div class="brand-subtitle">Tamil Nadu Social Vulnerability & Early Warning</div>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div class="live-pulse-badge">
-                    <span class="pulse-dot"></span>
-                    ACTIVE REPOSITORY
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def render_hero(
-    tag: str,
+def render_masthead(
+    folio_code: str,
     title: str,
-    description: str,
+    deck: str,
+    location_tag: str = "TAMIL NADU CIVIC REGISTRY · 11°07' N, 78°39' E",
 ) -> None:
-    """Render a signature page hero banner."""
+    """Render a newspaper / research folio masthead."""
     html = f"""
-    <div class="hero-banner">
-        <div class="hero-tag">{tag}</div>
-        <h1 class="hero-title">{title}</h1>
-        <p class="hero-desc">{description}</p>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
-
-
-def render_kpi(
-    label: str,
-    value: str | int | float,
-    icon: str = "📊",
-    subtitle: str = "",
-    color_accent: str = "#4f46e5",
-    badge_text: str = "",
-    badge_color: str = "#ecfdf5",
-    badge_text_color: str = "#065f46",
-) -> None:
-    """Render an ultra-luxe HTML KPI card."""
-    badge_html = ""
-    if badge_text:
-        badge_html = f"""
-        <span class="kpi-badge" style="background:{badge_color}; color:{badge_text_color};">
-            {badge_text}
-        </span>
-        """
-    sub_html = f'<div style="font-size:0.75rem; color:#64748b; font-weight:500;">{subtitle}</div>' if subtitle else ""
-
-    html = f"""
-    <div class="kpi-card" style="border-top: 3px solid {color_accent};">
-        <div class="kpi-header">
-            <span class="kpi-label">{label}</span>
-            <div class="kpi-icon-pill">{icon}</div>
+    <div class="folio-header">
+        <div>
+            <div class="folio-meta">{folio_code}</div>
+            <h1 class="masthead-title">{title}</h1>
+            <p class="masthead-deck">{deck}</p>
         </div>
-        <div class="kpi-value">{value}</div>
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-            {sub_html}
-            {badge_html}
+        <div class="registration-mark">
+            {location_tag}
         </div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
 
 
-def render_risk_pill(band_name: str) -> str:
-    """Generate HTML snippet for a risk badge with a glowing dot."""
-    style = BAND_STYLING.get(str(band_name), {"bg": "#f1f5f9", "text": "#475569", "border": "#cbd5e1", "dot": "#94a3b8"})
+def render_section_header(code: str, title: str, subtitle: str = "") -> None:
+    """Render a crisp editorial section rule."""
+    sub_html = f"<span style='font-size:0.8rem; color:#6E756C; font-family:\"IBM Plex Sans\"; margin-left:8px;'>— {subtitle}</span>" if subtitle else ""
+    html = f"""
+    <div class="section-rule">
+        <span class="section-code">{code}</span>
+        <span class="section-name">{title}</span>
+        {sub_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_editorial_scorecard(metrics: list[dict]) -> None:
+    """Render an integrated editorial horizontal scorecard with hairline cell dividers.
+
+    Parameters
+    ----------
+    metrics : list of dicts with keys:
+        - label (str): uppercase category description
+        - value (str or int or float): prominent reading numeral
+        - note (str): explanation or baseline comparison
+        - tag (str, optional): tiny tag text
+        - tag_style (dict, optional): bg, fg, border
+    """
+    cells = []
+    for m in metrics:
+        tag_html = ""
+        if m.get("tag"):
+            bg = m.get("tag_bg", "#EFECE4")
+            fg = m.get("tag_fg", "#444A43")
+            border = m.get("tag_border", "#D5D0C5")
+            tag_html = f"""
+            <span class="scorecard-tag" style="background:{bg}; color:{fg}; border:1px solid {border};">
+                {m['tag']}
+            </span>
+            """
+        cells.append(
+            f"""
+            <div class="scorecard-cell">
+                <span class="scorecard-label">{m['label']}</span>
+                <div class="scorecard-value">{m['value']}</div>
+                <div class="scorecard-note">{m.get('note', '')}</div>
+                {tag_html}
+            </div>
+            """
+        )
+
+    grid_html = f"""
+    <div class="editorial-scorecard">
+        {''.join(cells)}
+    </div>
+    """
+    st.markdown(grid_html, unsafe_allow_html=True)
+
+
+def render_editorial_badge(band_name: str) -> str:
+    """Return crisp rectangular editorial badge for risk band."""
+    style = BAND_EDITORIAL_STYLES.get(
+        str(band_name),
+        {"bg": "#EFECE4", "fg": "#444A43", "border": "#D5D0C5", "label": str(band_name)}
+    )
     return (
-        f'<span class="risk-pill" style="background:{style["bg"]}; color:{style["text"]}; border:1px solid {style["border"]}">'
-        f'<span class="risk-pill-dot" style="background:{style["dot"]}"></span>'
-        f'{band_name}'
+        f'<span class="editorial-badge" style="background:{style["bg"]}; color:{style["fg"]}; border:1px solid {style["border"]};">'
+        f'{style.get("label", band_name)}'
         f'</span>'
     )
 
 
-def render_sidebar_brand(data_status: dict) -> None:
-    """Render an aesthetic branded card inside the sidebar with data indicators."""
+def render_sidebar_masthead(data_status: dict) -> None:
+    """Render the research observatory identity in the sidebar."""
     with st.sidebar:
         st.markdown(
             """
-            <div style="padding:14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; margin-bottom:18px; box-shadow:0 2px 8px -2px rgba(15,23,42,0.04);">
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                    <div style="width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">S</div>
-                    <div>
-                        <div style="font-weight:700; font-size:0.95rem; color:#0f172a;">SAHAAYA Radar</div>
-                        <div style="font-size:0.7rem; color:#64748b; font-weight:600;">STATE INTELLIGENCE</div>
-                    </div>
-                </div>
-                <div style="font-size:0.75rem; color:#475569; line-height:1.4;">
-                    Multi-sectoral early warning index integrating UDISE+, NFHS-5, and MGNREGA indicators.
+            <div class="sidebar-masthead">
+                <div class="sidebar-logotype">SAHAAYA</div>
+                <div class="sidebar-descriptor">State Civic Data Observatory</div>
+                <div style="font-family:'IBM Plex Sans'; font-size:0.75rem; color:#8A9A8E; margin-top:6px; line-height:1.4;">
+                    Multi-dimensional early-warning index synthesising UDISE+, NFHS-5, and MGNREGA telemetry for Tamil Nadu.
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        with st.expander("System Artifacts", expanded=False):
+        with st.expander("Observatory Pipeline Status", expanded=False):
             items = [
-                ("District Features", data_status.get("features", False)),
-                ("Cluster Model", data_status.get("clusters", False)),
-                ("Anomaly Detector", data_status.get("anomalies", False)),
-                ("GeoJSON Boundaries", data_status.get("geojson", False)),
+                ("District Feature Store", data_status.get("features", False)),
+                ("Cluster Typologies", data_status.get("clusters", False)),
+                ("Isolation Forest Anomaly", data_status.get("anomalies", False)),
+                ("Survey Boundaries (GeoJSON)", data_status.get("geojson", False)),
             ]
             for label, ok in items:
-                icon = "🟢" if ok else "⚪"
-                status_txt = "Available" if ok else "Pending"
+                status_symbol = "▪ SYNCHRONIZED" if ok else "▫ PENDING"
+                status_color = "#99BAA4" if ok else "#8E7569"
                 st.markdown(
-                    f"<div style='display:flex; justify-content:space-between; font-size:0.8rem; padding:4px 0; border-bottom:1px solid #f1f5f9;'>"
-                    f"<span>{icon} {label}</span>"
-                    f"<span style='color:{'#10b981' if ok else '#94a3b8'}; font-weight:600;'>{status_txt}</span>"
+                    f"<div style='display:flex; justify-content:space-between; font-size:0.72rem; padding:4px 0; border-bottom:1px solid #233B2F; font-family:\"IBM Plex Mono\";'>"
+                    f"<span style='color:#C4CDC6;'>{label}</span>"
+                    f"<span style='color:{status_color}; font-weight:600;'>{status_symbol}</span>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
 
+        st.markdown(
+            """
+            <div class="sidebar-meta-panel">
+                <div style="color:#7A8F80; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px;">GEOGRAPHIC ENVELOPE</div>
+                <div style="color:#FAF8F2; font-weight:500;">Tamil Nadu, India</div>
+                <div style="color:#7A8F80; font-size:0.65rem; margin-top:4px;">EPSG:4326 · Canonical Districts: 38</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
 # ---------------------------------------------------------------------------
-# Plotly Luxury Styler
+# Editorial Plotly Styler
 # ---------------------------------------------------------------------------
-def style_plotly_fig(
+def style_editorial_figure(
     fig: go.Figure,
-    height: int = 400,
-    show_grid: bool = True,
+    height: int = 380,
     title: str = "",
+    subtitle: str = "",
+    show_grid: bool = True,
 ) -> go.Figure:
-    """Apply bespoke luxury typography, clean transparent canvas, and refined margins."""
+    """Format Plotly charts to look like professional editorial research graphs."""
+    full_title = None
+    if title:
+        full_title = dict(
+            text=f"<b>{title}</b>" + (f"<br><span style='font-size:11px; font-weight:normal; color:#6E756C;'>{subtitle}</span>" if subtitle else ""),
+            font=dict(family="Newsreader, Georgia, serif", size=15, color="#14241D"),
+            x=0.0,
+            xanchor="left",
+        )
+
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         height=height,
         font=dict(
-            family="Plus Jakarta Sans, sans-serif",
-            size=12,
-            color="#334155",
+            family="IBM Plex Sans, sans-serif",
+            size=11,
+            color="#2C312E",
         ),
-        title=dict(
-            text=f"<b>{title}</b>" if title else None,
-            font=dict(family="Outfit, sans-serif", size=16, color="#0f172a"),
-            x=0,
-            xanchor="left",
-        ) if title else None,
-        margin=dict(l=15, r=15, t=40 if title else 20, b=20),
+        title=full_title,
+        margin=dict(l=10, r=15, t=44 if title else 16, b=24),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=11),
-            bgcolor="rgba(255,255,255,0.7)",
-            bordercolor="rgba(226,232,240,0.8)",
+            font=dict(size=10, family="IBM Plex Mono"),
+            bgcolor="rgba(247, 245, 238, 0.8)",
+            bordercolor="#E2DED4",
             borderwidth=1,
         ),
         hoverlabel=dict(
-            bgcolor="#0f172a",
-            font_size=12,
-            font_family="Plus Jakarta Sans",
-            font_color="#ffffff",
-            bordercolor="#334155",
+            bgcolor="#14241D",
+            font_size=11,
+            font_family="IBM Plex Mono",
+            font_color="#FAF8F2",
+            bordercolor="#233B2F",
         ),
     )
 
     if show_grid:
         fig.update_xaxes(
             showgrid=True,
-            gridcolor="rgba(226, 232, 240, 0.7)",
-            linecolor="rgba(203, 213, 225, 0.8)",
-            tickfont=dict(size=11, color="#64748b"),
+            gridcolor="#E5E0D5",
+            gridwidth=0.75,
+            linecolor="#C2BCB0",
+            linewidth=1,
+            tickfont=dict(size=10, family="IBM Plex Mono", color="#5E655D"),
+            zeroline=False,
         )
         fig.update_yaxes(
             showgrid=True,
-            gridcolor="rgba(226, 232, 240, 0.7)",
-            linecolor="rgba(203, 213, 225, 0.8)",
-            tickfont=dict(size=11, color="#64748b"),
+            gridcolor="#E5E0D5",
+            gridwidth=0.75,
+            linecolor="#C2BCB0",
+            linewidth=1,
+            tickfont=dict(size=10, family="IBM Plex Mono", color="#5E655D"),
+            zeroline=False,
         )
+
     return fig

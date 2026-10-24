@@ -1,8 +1,9 @@
 """
 SAHAAYA — Cluster Analysis Page.
 
-Visualises clustering results: cluster profiles, membership tables,
-PCA-based scatter projection, and auto-generated cluster descriptions.
+Civic Intelligence, Editorial Precision aesthetic:
+Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
+and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -11,8 +12,8 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(
-    page_title="Risk Clusters — SAHAAYA",
-    page_icon="🔮",
+    page_title="Risk Typologies — SAHAAYA",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -28,26 +29,25 @@ from utils import (  # noqa: E402
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
-    render_topbar,
-    render_hero,
-    render_kpi,
-    render_sidebar_brand,
-    style_plotly_fig,
+    render_masthead,
+    render_section_header,
+    render_editorial_scorecard,
+    render_sidebar_masthead,
+    style_editorial_figure,
 )
 
 # ---------------------------------------------------------------------------
-# Theme & Top Navigation
+# Theme & Masthead
 # ---------------------------------------------------------------------------
 inject_custom_theme()
-render_topbar(current_page="Risk Clusters")
+render_sidebar_masthead(get_data_status())
 
-render_hero(
-    tag="UNSUPERVISED ML TYPOLOGIES",
-    title="Socio-Economic Cluster Intelligence",
-    description="Algorithmic clustering (K-Means with Silhouette Optimization) grouping districts into structurally homogenous profiles based on shared education, health, and infrastructure dynamics.",
+render_masthead(
+    folio_code="ANALYTICAL MEMORANDUM · STATISTICAL TYPOLOGIES",
+    title="Socio-Economic Risk Archetypes & Cluster Profiles",
+    deck="Unsupervised partition modeling (K-Means with Silhouette Optimization) segmenting districts into structurally homogenous peer groups to support tailored policy interventions and regional benchmarking.",
+    location_tag="UNSUPERVISED PARTITION ANALYSIS",
 )
-
-render_sidebar_brand(get_data_status())
 
 # ---------------------------------------------------------------------------
 # Load data & Fallbacks
@@ -57,14 +57,11 @@ profiles_df = load_profiles()
 features_df = load_features()
 
 if clusters_df is None and (features_df is None or "cluster" not in features_df.columns):
-    st.error(
-        "**Cluster data not found.** "
-        "Run `python src/models/cluster.py` to generate cluster profiles."
-    )
+    st.error("Cluster assignment store not located. Run `python src/models/cluster.py` to generate.")
     st.stop()
 
 if features_df is not None and is_mock_data(features_df):
-    st.warning("⚠️ Mock / synthetic data detected. Results are illustrative only.")
+    st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # Merge cluster into features if needed
 if clusters_df is not None and features_df is not None:
@@ -87,42 +84,54 @@ else:
     view = merged.copy()
 
 if "cluster" not in view.columns:
-    st.error("No `cluster` column found in data.")
+    st.error("Column 'cluster' not located in processed data.")
     st.stop()
 
 view = view.dropna(subset=["cluster"])
 view["cluster"] = view["cluster"].astype(int)
 
 # ---------------------------------------------------------------------------
-# Overview KPIs
+# Overview Scorecard
 # ---------------------------------------------------------------------------
 n_clusters = view["cluster"].nunique()
 cluster_sizes = view.groupby("cluster").size().reset_index(name="size")
+dim_cols = [c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]
 
-k1, k2, k3, k4 = st.columns(4)
-
-with k1:
-    render_kpi("Distinct Typologies", n_clusters, icon="🔮", color_accent="#4f46e5", subtitle="K-Means optimal partitions")
-with k2:
-    render_kpi("Largest Cluster", f"{int(cluster_sizes['size'].max())} dists", icon="🏛️", color_accent="#06b6d4", subtitle="Dominant profile size")
-with k3:
-    render_kpi("Smallest Cluster", f"{int(cluster_sizes['size'].min())} dists", icon="🎯", color_accent="#8b5cf6", subtitle="Specialized archetype")
-with k4:
-    render_kpi("Clustering Features", len([c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]), icon="📐", color_accent="#10b981", subtitle="Risk dimensions modeled")
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+render_editorial_scorecard([
+    {
+        "label": "Optimal Archetypes (k)",
+        "value": str(n_clusters),
+        "note": "Evaluated via silhouette coefficient optimization",
+        "tag": "Silhouette Peak",
+        "tag_bg": "#EAEFEA",
+        "tag_fg": "#264230",
+        "tag_border": "#BDCFBF",
+    },
+    {
+        "label": "Dominant Archetype Size",
+        "value": f"{int(cluster_sizes['size'].max())} dists",
+        "note": "Modal socio-economic vulnerability pattern",
+    },
+    {
+        "label": "Specialized Archetype Size",
+        "value": f"{int(cluster_sizes['size'].min())} dists",
+        "note": "Minority structural vulnerability profile",
+    },
+    {
+        "label": "Active Model Dimensions",
+        "value": f"{len(dim_cols)} of 4",
+        "note": "Features with verified non-null telemetry",
+        "tag": "Audited",
+        "tag_bg": "#EFECE4",
+        "tag_fg": "#444A43",
+        "tag_border": "#D5D0C5",
+    },
+])
 
 # ---------------------------------------------------------------------------
 # Dimension Profiles Tab (Grouped Bar & Heatmap)
 # ---------------------------------------------------------------------------
-st.markdown(
-    "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.25rem; color:#0f172a; margin-bottom:8px;'>"
-    "📊 Comparative Risk Archetypes"
-    "</div>",
-    unsafe_allow_html=True,
-)
-
-dim_cols = [c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]
+render_section_header("SEC. 01", "Cross-Dimension Typology Profiles", "Comparative Risk Archetypes")
 
 if dim_cols:
     profile_data = view.groupby("cluster")[dim_cols].mean().reset_index()
@@ -134,9 +143,9 @@ if dim_cols:
     )
     reverse_map = {v: k for k, v in SUB_COLS.items()}
     profile_long["Dimension"] = profile_long["Dimension"].map(reverse_map).fillna(profile_long["Dimension"])
-    profile_long["cluster"] = "Cluster " + profile_long["cluster"].astype(str)
+    profile_long["cluster"] = "Archetype " + profile_long["cluster"].astype(str)
 
-    tab_bar, tab_heat = st.tabs(["📊 Grouped Dimension Profiles", "🔥 Risk Density Matrix (Heatmap)"])
+    tab_bar, tab_heat = st.tabs(["Grouped Dimensional Profile", "Risk Density Heatmap"])
 
     with tab_bar:
         fig_bar = px.bar(
@@ -146,10 +155,16 @@ if dim_cols:
             color="cluster",
             barmode="group",
             range_y=[0, 100],
-            color_discrete_sequence=["#4f46e5", "#06b6d4", "#f59e0b", "#ec4899"],
-            labels={"cluster": "Archetype", "Mean Score": "Mean Risk (0-100)"},
+            color_discrete_sequence=["#1E3A2B", "#B84324", "#827845", "#556B5D"],
+            labels={"cluster": "Archetype", "Mean Score": "Mean Risk Score (0-100)"},
         )
-        style_plotly_fig(fig_bar, height=380, title="Cross-Dimension Vulnerability Benchmark")
+        fig_bar.update_traces(marker=dict(line=dict(width=0.8, color="#14241D")))
+        style_editorial_figure(
+            fig_bar,
+            height=360,
+            title="Archetype Signature Comparison",
+            subtitle="Mean normalized vulnerability index across core pillars",
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with tab_heat:
@@ -160,31 +175,34 @@ if dim_cols:
             heat_pivot.values,
             x=heat_pivot.columns.tolist(),
             y=heat_pivot.index.tolist(),
-            color_continuous_scale="YlOrRd",
+            color_continuous_scale=[
+                [0.0, "#EAE5D9"],
+                [0.4, "#BDCBB9"],
+                [0.7, "#C87C47"],
+                [1.0, "#A83C1F"],
+            ],
             zmin=0,
             zmax=100,
             aspect="auto",
-            labels=dict(color="Mean Risk"),
+            labels=dict(color="Mean Index"),
         )
-        style_plotly_fig(fig_heat, height=320, title="Cluster Intensity Heatmap")
+        style_editorial_figure(
+            fig_heat,
+            height=280,
+            title="Typology Intensity Matrix",
+            subtitle="Dimensional stress density across clusters",
+        )
         st.plotly_chart(fig_heat, use_container_width=True)
 else:
-    st.info("No dimension score columns found in data.")
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+    st.info("No dimension score columns located in dataset.")
 
 # ---------------------------------------------------------------------------
-# PCA 2D Spatial Scatter
+# Latent Space Projection & Membership Ledger
 # ---------------------------------------------------------------------------
-col_pca, col_members = st.columns([1.2, 1])
+col_pca, col_members = st.columns([1.3, 1])
 
 with col_pca:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
-        "🌐 PCA Latent Space Projection"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 02", "Latent Space Projection", "Principal Component Analysis")
 
     if dim_cols and len(dim_cols) >= 2:
         from sklearn.decomposition import PCA
@@ -198,7 +216,7 @@ with col_pca:
             scatter_df = pd.DataFrame(
                 coords, columns=[f"PC{i+1}" for i in range(n_components)], index=view.index
             )
-            scatter_df["Cluster"] = "Cluster " + view["cluster"].astype(str)
+            scatter_df["Cluster"] = "Archetype " + view["cluster"].astype(str)
             scatter_df["District"] = view["district_name"].values
 
             fig_scatter = px.scatter(
@@ -208,38 +226,42 @@ with col_pca:
                 color="Cluster",
                 hover_name="District",
                 hover_data={"Cluster": True, "PC1": ":.2f", "PC2": ":.2f"},
-                color_discrete_sequence=["#4f46e5", "#06b6d4", "#f59e0b", "#ec4899"],
+                color_discrete_sequence=["#1E3A2B", "#B84324", "#827845", "#556B5D"],
             )
-            fig_scatter.update_traces(marker=dict(size=11, opacity=0.85, line=dict(width=1, color="#ffffff")))
-            style_plotly_fig(fig_scatter, height=420)
+            fig_scatter.update_traces(
+                marker=dict(size=9, opacity=0.9, line=dict(width=0.8, color="#14241D"))
+            )
+            style_editorial_figure(
+                fig_scatter,
+                height=380,
+                title="PCA Coordinate Mapping",
+                subtitle="Orthogonal linear projection of multi-dimensional profiles",
+            )
             st.plotly_chart(fig_scatter, use_container_width=True)
 
             explained = pca.explained_variance_ratio_
             st.caption(
-                f"Principal Components capture {explained[0]:.1%}"
-                + (f" (PC1) and {explained[1]:.1%} (PC2)" if len(explained) > 1 else "")
-                + " of overall variance."
+                f"Principal Components capture {explained[0]:.1%} (PC1)"
+                + (f" and {explained[1]:.1%} (PC2)" if len(explained) > 1 else "")
+                + " of cumulative variance across input indicators."
             )
         except Exception as exc:
             st.warning(f"PCA projection: {exc}")
     else:
-        st.info("At least 2 dimensions needed for PCA projection.")
+        st.info("At least two valid dimensions required for latent space projection.")
 
 with col_members:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
-        "🏛️ Constituent Districts by Cluster"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 03", "Jurisdiction Roster", "Constituent Districts by Archetype")
 
     for cid in sorted(view["cluster"].unique()):
         members = sorted(view[view["cluster"] == cid]["district_name"].dropna().unique())
-        c_badge = f"<span style='background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;'>{len(members)} districts</span>"
-
-        with st.expander(f"Cluster {cid} ({len(members)} districts)", expanded=(cid == 0)):
-            pills = "".join(
-                f"<span style='display:inline-block; background:#f1f5f9; color:#1e293b; padding:4px 10px; margin:3px 4px; border-radius:8px; font-size:0.8rem; font-weight:600; border:1px solid #e2e8f0;'>{m}</span>"
-                for m in members
+        with st.expander(f"Archetype {cid} — {len(members)} Jurisdictions", expanded=(cid == 0)):
+            items_str = ", ".join(members)
+            st.markdown(
+                f"""
+                <div style="font-family:'IBM Plex Sans'; font-size:0.84rem; line-height:1.6; color:#2C312E; padding:8px 0;">
+                    {items_str}
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-            st.markdown(f"<div style='line-height:2;'>{pills}</div>", unsafe_allow_html=True)

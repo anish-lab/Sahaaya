@@ -1,8 +1,9 @@
 """
 SAHAAYA — Anomaly Detection Results Page.
 
-Displays districts flagged as anomalous by the pipeline, their anomaly scores,
-unusual features, and comparison against district averages.
+Civic Intelligence, Editorial Precision aesthetic:
+Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
+and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Anomaly Radar — SAHAAYA",
-    page_icon="🚨",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -26,26 +27,25 @@ from utils import (  # noqa: E402
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
-    render_topbar,
-    render_hero,
-    render_kpi,
-    render_sidebar_brand,
-    style_plotly_fig,
+    render_masthead,
+    render_section_header,
+    render_editorial_scorecard,
+    render_sidebar_masthead,
+    style_editorial_figure,
 )
 
 # ---------------------------------------------------------------------------
-# Theme & Top Navigation
+# Theme & Masthead
 # ---------------------------------------------------------------------------
 inject_custom_theme()
-render_topbar(current_page="Anomaly Radar")
+render_sidebar_masthead(get_data_status())
 
-render_hero(
-    tag="ISOLATION FOREST RADAR",
-    title="Multi-Variate Anomaly Detection",
-    description="Unsupervised machine learning identifying districts that exhibit sharp divergence (> 1.5 standard deviations) from baseline state distributions. Prompts for diagnostic investigation, not definitive distress.",
+render_masthead(
+    folio_code="DIAGNOSTIC AUDIT · STATISTICAL RESIDUALS",
+    title="Multi-Variate Anomaly Detection Registry",
+    deck="Isolation Forest ensemble profiling identifying jurisdictions whose socio-economic telemetry deviates significantly (> 1.5 standard deviations) from baseline regional envelopes. Designed to trigger administrative inquiry, not definitive distress.",
+    location_tag="ISOLATION FOREST AUDIT · 100 ESTIMATORS",
 )
-
-render_sidebar_brand(get_data_status())
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -54,17 +54,14 @@ anomalies_df = load_anomalies()
 features_df = load_features()
 
 if anomalies_df is None:
-    st.error(
-        "**Anomaly results not found.** "
-        "Run `python src/models/anomaly.py` to generate `anomaly_results.parquet`."
-    )
+    st.error("Anomaly result store not located. Run `python src/models/anomaly.py` to generate.")
     st.stop()
 
 if features_df is not None and is_mock_data(features_df):
-    st.warning("⚠️ Mock / synthetic data detected. Results are illustrative only.")
+    st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# Summary KPIs
+# Summary Scorecard
 # ---------------------------------------------------------------------------
 total = len(anomalies_df)
 flagged_df = anomalies_df[anomalies_df["anomaly_flag"] == True]  # noqa: E712
@@ -73,70 +70,51 @@ pct_flagged = (n_flagged / total * 100) if total > 0 else 0
 avg_score = anomalies_df["anomaly_score"].mean() if "anomaly_score" in anomalies_df.columns else None
 max_score = anomalies_df["anomaly_score"].max() if "anomaly_score" in anomalies_df.columns else None
 
-k1, k2, k3, k4 = st.columns(4)
-
-with k1:
-    render_kpi(
-        "Flagged Districts",
-        n_flagged,
-        icon="🚨",
-        color_accent="#e11d48",
-        subtitle=f"Out of {total} total districts",
-        badge_text="Outliers",
-        badge_color="#ffe4e6",
-        badge_text_color="#9f1239",
-    )
-with k2:
-    render_kpi(
-        "Anomaly Ratio",
-        f"{pct_flagged:.1f}%",
-        icon="📊",
-        color_accent="#f97316",
-        subtitle="Expected contamination: 10%",
-        badge_text="Contamination",
-        badge_color="#ffedd5",
-        badge_text_color="#9a3412",
-    )
-with k3:
-    render_kpi(
-        "Mean Anomaly Score",
-        f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A",
-        icon="📈",
-        color_accent="#4f46e5",
-        subtitle="Normalized 0-100 scale",
-        badge_text="State baseline",
-        badge_color="#e0e7ff",
-        badge_text_color="#3730a3",
-    )
-with k4:
-    render_kpi(
-        "Peak Score",
-        f"{max_score:.1f}" if pd.notna(max_score) else "N/A",
-        icon="⚡",
-        color_accent="#8b5cf6",
-        subtitle="Highest deviation index",
-        badge_text="Max outlier",
-        badge_color="#f3e8ff",
-        badge_text_color="#6b21a8",
-    )
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+render_editorial_scorecard([
+    {
+        "label": "Flagged Jurisdictions",
+        "value": str(n_flagged),
+        "note": f"Out of {total} total evaluated units",
+        "tag": "Divergent Outliers",
+        "tag_bg": "#F7E5DE",
+        "tag_fg": "#8A260F",
+        "tag_border": "#E5A997",
+    },
+    {
+        "label": "Contamination Ratio",
+        "value": f"{pct_flagged:.1f}%",
+        "note": "Target algorithmic bound: 10.0%",
+        "tag": "Verified",
+        "tag_bg": "#EFECE4",
+        "tag_fg": "#444A43",
+        "tag_border": "#D5D0C5",
+    },
+    {
+        "label": "Mean Anomaly Intensity",
+        "value": f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A",
+        "note": "Negated forest decision margin (0–100 scale)",
+    },
+    {
+        "label": "Peak Outlier Magnitude",
+        "value": f"{max_score:.1f}" if pd.notna(max_score) else "N/A",
+        "note": "Highest recorded statistical deviation",
+        "tag": "Focal Audit",
+        "tag_bg": "#F7E5DE",
+        "tag_fg": "#8A260F",
+        "tag_border": "#E5A997",
+    },
+])
 
 # ---------------------------------------------------------------------------
-# Flagged Districts Table & Histogram
+# Flagged Registry & Distribution Histogram
 # ---------------------------------------------------------------------------
 col_table, col_hist = st.columns([1.3, 1])
 
 with col_table:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
-        "🚨 Anomalous Districts & Deviation Drivers"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 01", "Divergent Jurisdiction Register", "Flagged Outliers")
 
     if n_flagged == 0:
-        st.success("No districts were flagged as anomalous under the current model.")
+        st.success("No jurisdictions flagged as anomalous under the current forest parameters.")
     else:
         display_cols = ["district_name"]
         if "anomaly_score" in flagged_df.columns:
@@ -147,9 +125,9 @@ with col_table:
         show = flagged_df[display_cols].copy()
         show.rename(
             columns={
-                "district_name": "District",
+                "district_name": "Jurisdiction",
                 "anomaly_score": "Score",
-                "unusual_features": "Unusual Feature Drivers",
+                "unusual_features": "Divergent Feature Driver(s)",
             },
             inplace=True,
         )
@@ -161,40 +139,35 @@ with col_table:
 
 with col_hist:
     if "anomaly_score" in anomalies_df.columns:
-        st.markdown(
-            "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
-            "📊 State Anomaly Density"
-            "</div>",
-            unsafe_allow_html=True,
-        )
+        render_section_header("SEC. 02", "Anomaly Score Density", "Empirical Frequency")
 
         fig_hist = px.histogram(
             anomalies_df,
             x="anomaly_score",
-            nbins=25,
-            color_discrete_sequence=["#4f46e5"],
+            nbins=22,
+            color_discrete_sequence=["#1E3A2B"],
             labels={"anomaly_score": "Anomaly Score"},
         )
-        fig_hist.update_traces(marker=dict(line=dict(width=1, color="rgba(255,255,255,0.8)")))
-        style_plotly_fig(fig_hist, height=310)
-        fig_hist.update_layout(xaxis_title="Anomaly Score (0-100)", yaxis_title="Districts Count", bargap=0.08)
+        fig_hist.update_traces(
+            marker=dict(line=dict(width=0.8, color="#14241D"))
+        )
+        style_editorial_figure(
+            fig_hist,
+            height=280,
+            title="Frequency Histogram",
+            subtitle="Distribution of negated decision scores across 38 districts",
+        )
+        fig_hist.update_layout(xaxis_title="Score (0 = baseline, 100 = extreme)", yaxis_title="Count", bargap=0.1)
         st.plotly_chart(fig_hist, use_container_width=True)
-
-st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Detailed Indicator Comparison for a Selected Flagged District
 # ---------------------------------------------------------------------------
 if n_flagged > 0 and features_df is not None:
-    st.markdown(
-        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.25rem; color:#0f172a; margin-bottom:8px;'>"
-        "🔬 Comparative Dimension Breakdown vs. State Average"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    render_section_header("SEC. 03", "Diagnostic Comparative Decomposition", "District vs. State Average")
 
     flagged_list = sorted(flagged_df["district_name"].dropna().unique())
-    selected = st.selectbox("Inspect Flagged District Profile", flagged_list, index=0)
+    selected = st.selectbox("Select Target Outlier for Diagnostic Drill-Down", flagged_list, index=0)
 
     time_col = "period" if "period" in features_df.columns else ("year" if "year" in features_df.columns else None)
     if time_col and features_df[time_col].nunique() > 1:
@@ -219,39 +192,54 @@ if n_flagged > 0 and features_df is not None:
                         round(v, 1) if pd.notna(v) else None
                         for v in district_vals
                     ],
-                    "Tamil Nadu Average": [round(v, 1) for v in mean_vals],
+                    "State Baseline Average": [round(v, 1) for v in mean_vals],
                 }
             )
 
             comp_long = comp.melt(
                 id_vars="Dimension",
-                value_vars=[selected, "Tamil Nadu Average"],
+                value_vars=[selected, "State Baseline Average"],
                 var_name="Cohort",
-                value_name="Risk Score",
+                value_name="Index Score",
             )
 
             fig_comp = px.bar(
                 comp_long,
                 x="Dimension",
-                y="Risk Score",
+                y="Index Score",
                 color="Cohort",
                 barmode="group",
                 range_y=[0, 100],
                 color_discrete_map={
-                    selected: "#e11d48",
-                    "Tamil Nadu Average": "#4f46e5",
+                    selected: "#B84324",                 # Burnt orange for target outlier
+                    "State Baseline Average": "#1E3A2B", # Deep forest green for state average
                 },
-                text="Risk Score",
+                text="Index Score",
             )
             fig_comp.update_traces(
                 texttemplate="%{y:.1f}",
                 textposition="outside",
+                marker=dict(line=dict(width=0.8, color="#14241D")),
+                textfont=dict(family="IBM Plex Mono", size=10),
             )
-            style_plotly_fig(fig_comp, height=360, title=f"Risk Signature: {selected} vs. State Average")
+            style_editorial_figure(
+                fig_comp,
+                height=340,
+                title=f"Dimensional Discrepancy — {selected}",
+                subtitle="Target jurisdiction relative to statewide benchmark means",
+            )
             st.plotly_chart(fig_comp, use_container_width=True)
 
         amatch = anomalies_df[anomalies_df["district_name"] == selected]
         if not amatch.empty:
             unusual = amatch.iloc[0].get("unusual_features", "")
             if pd.notna(unusual) and str(unusual).strip():
-                st.info(f"💡 **Specific Features Driving Anomaly:** `{unusual}`")
+                st.markdown(
+                    f"""
+                    <div style="background:#FFFFFF; border:1px solid #E2DED4; border-left:3px solid #B84324; padding:12px 16px; margin-top:14px;">
+                        <span style="font-family:'IBM Plex Mono'; font-size:0.7rem; font-weight:600; color:#8A260F; text-transform:uppercase; letter-spacing:0.08em;">Primary Deviation Drivers:</span>
+                        <div style="font-family:'IBM Plex Mono'; font-size:0.82rem; color:#181A18; margin-top:4px;">{unusual}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
