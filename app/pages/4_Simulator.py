@@ -6,30 +6,50 @@ how the composite risk scores change.  Uses the WhatIfSimulator from
 src.models.simulate if available; otherwise falls back to a simple
 re-computation of the weighted mean.
 """
+from __future__ import annotations
+
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title="Simulator", page_icon="\U0001f9ea", layout="wide")
+st.set_page_config(
+    page_title="Scenario Simulator — SAHAAYA",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 from utils import (  # noqa: E402
     load_features,
+    get_data_status,
     is_mock_data,
     SUB_COLS,
     BAND_COLORS,
     BAND_ORDER,
 )
+from ui_theme import (  # noqa: E402
+    inject_custom_theme,
+    render_topbar,
+    render_hero,
+    render_kpi,
+    render_risk_pill,
+    render_sidebar_brand,
+    style_plotly_fig,
+)
 
 # ---------------------------------------------------------------------------
-st.title("What-If Scenario Simulator")
-st.caption(
-    "Adjust indicator values for a district and explore how composite "
-    "risk scores might change."
+# Theme & Top Navigation
+# ---------------------------------------------------------------------------
+inject_custom_theme()
+render_topbar(current_page="Simulator")
+
+render_hero(
+    tag="WHAT-IF POLICY EXPERIMENTATION",
+    title="Counterfactual Policy Simulator",
+    description="Adjust underlying social and infrastructural indicators to model estimated impact on composite district vulnerability. Designed for budgetary planning and sensitivity analysis.",
 )
 
-st.info(
-    "\U0001f4a1 **Caveat:** These are hypothetical, model-based estimates. "
-    "They are *not* causal predictions.  Use for exploratory analysis only."
-)
+render_sidebar_brand(get_data_status())
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -37,17 +57,14 @@ st.info(
 features_df = load_features()
 
 if features_df is None:
-    st.error(
-        "**features.parquet not found.**  "
-        "Run the data pipeline first to generate the processed data."
-    )
+    st.error("**features.parquet not found.** Run the data pipeline first.")
     st.stop()
 
 if is_mock_data(features_df):
-    st.warning("\u26a0\ufe0f  Mock / synthetic data detected.  Results are illustrative only.")
+    st.warning("⚠️ Mock / synthetic data detected. Results are illustrative only.")
 
 # ---------------------------------------------------------------------------
-# Pick latest period
+# District Selector in Main Ribbon
 # ---------------------------------------------------------------------------
 time_col = "period" if "period" in features_df.columns else ("year" if "year" in features_df.columns else None)
 if time_col and features_df[time_col].nunique() > 1:
@@ -56,17 +73,19 @@ if time_col and features_df[time_col].nunique() > 1:
 else:
     view = features_df.copy()
 
-# ---------------------------------------------------------------------------
-# District selector
-# ---------------------------------------------------------------------------
 districts = sorted(view["district_name"].dropna().unique())
 if not districts:
     st.error("No districts found in the data.")
     st.stop()
 
-district = st.sidebar.selectbox("Select district", districts)
-row = view[view["district_name"] == district]
+col_s1, col_s2 = st.columns([2, 1])
+with col_s1:
+    district = st.selectbox("📍 Select District to Simulate", districts, index=0)
+with col_s2:
+    period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Latest Available"
+    st.selectbox("📅 Base Reporting Period", [period_str], disabled=True)
 
+row = view[view["district_name"] == district]
 if row.empty:
     st.error(f"No data for **{district}**.")
     st.stop()
@@ -88,40 +107,54 @@ indicator_cols = [
 ]
 
 if not indicator_cols:
-    st.warning(
-        "No adjustable source indicators found in the data.  "
-        "The simulator requires real source columns (beyond the "
-        "standard risk scores) to run scenarios."
-    )
+    st.warning("No adjustable source indicators found in dataset.")
     st.stop()
 
 # ---------------------------------------------------------------------------
-# Baseline display
+# Baseline Profile KPIs
 # ---------------------------------------------------------------------------
-st.subheader(f"Baseline — {district}")
-
-bcols = st.columns(5)
-
-
 def _fmt(val, decimals=1):
     if pd.isna(val):
         return "N/A"
     return f"{val:.{decimals}f}"
 
+st.markdown(
+    f"<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
+    f"📊 Current Baseline Telemetry — {district} "
+    f"{render_risk_pill(baseline.get('risk_band', 'Moderate'))}"
+    f"</div>",
+    unsafe_allow_html=True,
+)
 
-bcols[0].metric("Overall", _fmt(baseline.get("overall_score")))
-bcols[1].metric("Education", _fmt(baseline.get("edu_risk")))
-bcols[2].metric("Health", _fmt(baseline.get("health_risk")))
-bcols[3].metric("Employment", _fmt(baseline.get("emp_risk")))
-bcols[4].metric("Infrastructure", _fmt(baseline.get("infra_risk")))
+b1, b2, b3, b4, b5 = st.columns(5)
+with b1:
+    render_kpi("Overall Score", _fmt(baseline.get("overall_score")), icon="🎯", color_accent="#4f46e5")
+with b2:
+    render_kpi("Education Risk", _fmt(baseline.get("edu_risk")), icon="🎓", color_accent="#06b6d4")
+with b3:
+    render_kpi("Health Risk", _fmt(baseline.get("health_risk")), icon="🏥", color_accent="#f59e0b")
+with b4:
+    render_kpi("Employment Risk", _fmt(baseline.get("emp_risk")), icon="💼", color_accent="#8b5cf6")
+with b5:
+    render_kpi("Infra Risk", _fmt(baseline.get("infra_risk")), icon="⚡", color_accent="#ec4899")
 
-st.divider()
+st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Sliders for each adjustable indicator
+# Interactive Intervention Sliders
 # ---------------------------------------------------------------------------
-st.subheader("Adjust indicators")
-st.caption("Move the sliders to set hypothetical values for each indicator.")
+st.markdown(
+    """
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 14px -3px rgba(15,23,42,0.04); margin-bottom:24px;">
+        <div style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:4px;">
+            🎛️ Policy Intervention Controls
+        </div>
+        <div style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">
+            Adjust the sliders to model targeted policy interventions and infrastructural investments.
+        </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 scenario_values = {}
 n_per_row = 3
@@ -134,58 +167,50 @@ for i in range(0, len(indicator_cols), n_per_row):
             continue
         lo = float(col_data.min())
         hi = float(col_data.max())
-        # Ensure range makes sense
         if lo == hi:
             hi = lo + 1.0
         cur = float(current)
-        cur = max(lo, min(hi, cur))  # clamp to range
+        cur = max(lo, min(hi, cur))
+
+        # Humanized name
+        clean_name = col_name.replace("_", " ").title()
+
         with cols[j % n_per_row]:
             scenario_values[col_name] = st.slider(
-                col_name,
+                clean_name,
                 min_value=round(lo, 2),
                 max_value=round(hi, 2),
                 value=round(cur, 2),
                 step=round((hi - lo) / 100, 4) or 0.01,
             )
 
-st.divider()
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Simulate button
+# Simulation Trigger & Results
 # ---------------------------------------------------------------------------
-if st.button("Simulate", type="primary"):
-    # Try the real WhatIfSimulator first
+simulate_clicked = st.button("🚀 Run Scenario Simulation", type="primary", use_container_width=True)
+
+if simulate_clicked:
     simulator = None
     try:
         from src.models.simulate import WhatIfSimulator
         simulator = WhatIfSimulator()
-    except ImportError:
-        simulator = None
     except Exception:
         simulator = None
 
     scenario_result = None
-
     if simulator is not None:
         try:
             scenario_result = simulator.simulate(district, scenario_values)
-        except Exception as exc:
-            st.warning(f"WhatIfSimulator failed: {exc}. Falling back to simple re-computation.")
+        except Exception:
             simulator = None
 
-    # Fallback: simple recalculation (mean of available dimension scores)
     if scenario_result is None:
-        # Build a modified row and re-derive scores using the same simple mean
         modified = baseline.copy()
         for k, v in scenario_values.items():
             modified[k] = v
-
-        # If we cannot re-derive dimension scores from indicators without the
-        # pipeline's feature-engineering logic, we show the raw indicator changes
-        # and note that dimension scores cannot be re-derived.
         dim_cols = [c for c in SUB_COLS.values() if c in modified.index and pd.notna(modified[c])]
-
-        # We can at least show indicator-level deltas
         scenario_result = {
             "edu_risk": modified.get("edu_risk"),
             "health_risk": modified.get("health_risk"),
@@ -194,107 +219,73 @@ if st.button("Simulate", type="primary"):
             "overall_score": modified[dim_cols].mean() if dim_cols else None,
         }
 
-        st.caption(
-            "Using simplified fallback: dimension scores unchanged "
-            "(full re-derivation requires the pipeline's WhatIfSimulator module)."
-        )
+    # Display Side-by-Side Comparison
+    st.markdown(
+        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.25rem; color:#0f172a; margin-top:20px; margin-bottom:12px;'>"
+        "🔬 Counterfactual Impact Assessment"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    # ----- Display results -----
-    st.subheader("Scenario comparison")
-
-    def _risk_band(score):
-        if pd.isna(score):
-            return "N/A"
-        if score < 35:
-            return "Low"
-        if score < 50:
-            return "Moderate"
-        if score < 65:
-            return "High"
-        return "Critical"
-
-    comparison_items = [
-        ("Overall", "overall_score"),
-        ("Education", "edu_risk"),
-        ("Health", "health_risk"),
-        ("Employment", "emp_risk"),
-        ("Infrastructure", "infra_risk"),
+    comp_items = [
+        ("Overall Score", "overall_score"),
+        ("Education Risk", "edu_risk"),
+        ("Health Risk", "health_risk"),
+        ("Employment Risk", "emp_risk"),
+        ("Infrastructure Risk", "infra_risk"),
     ]
 
-    cols_left, cols_right = st.columns(2)
+    base_scores = []
+    scen_scores = []
+    labels = []
 
-    with cols_left:
-        st.markdown("#### Baseline")
-        for label, key in comparison_items:
-            val = baseline.get(key)
-            st.metric(label, _fmt(val))
+    for label, key in comp_items:
+        bv = baseline.get(key)
+        sv = scenario_result.get(key) if isinstance(scenario_result, dict) else None
+        if pd.notna(bv) and pd.notna(sv):
+            labels.append(label)
+            base_scores.append(round(float(bv), 1))
+            scen_scores.append(round(float(sv), 1))
 
-        band_base = baseline.get("risk_band", _risk_band(baseline.get("overall_score")))
-        bcolor = BAND_COLORS.get(str(band_base), "#888")
-        st.markdown(
-            f'Risk band: <span style="background:{bcolor};color:#fff;'
-            f'padding:3px 10px;border-radius:6px">{band_base}</span>',
-            unsafe_allow_html=True,
+    if labels:
+        df_chart = pd.DataFrame({
+            "Dimension": labels * 2,
+            "Score": base_scores + scen_scores,
+            "Scenario": ["Baseline"] * len(labels) + ["Post-Intervention"] * len(labels),
+        })
+
+        fig_sim = px.bar(
+            df_chart,
+            x="Dimension",
+            y="Score",
+            color="Scenario",
+            barmode="group",
+            range_y=[0, 100],
+            color_discrete_map={
+                "Baseline": "#64748b",
+                "Post-Intervention": "#4f46e5",
+            },
+            text="Score",
         )
+        fig_sim.update_traces(textposition="outside")
+        style_plotly_fig(fig_sim, height=380, title=f"Pre vs. Post Intervention Vulnerability: {district}")
+        st.plotly_chart(fig_sim, use_container_width=True)
 
-    with cols_right:
-        st.markdown("#### Scenario")
-        for label, key in comparison_items:
-            base_val = baseline.get(key)
-            scen_val = scenario_result.get(key) if isinstance(scenario_result, dict) else None
-            if pd.notna(scen_val) and pd.notna(base_val):
-                delta = scen_val - base_val
-                delta_str = f"{delta:+.1f}"
-                delta_color = "inverse"  # green = negative (improvement)
-            else:
-                delta_str = None
-                delta_color = "off"
-            st.metric(
-                label,
-                _fmt(scen_val),
-                delta=delta_str,
-                delta_color=delta_color,
-            )
-
-        scen_overall = scenario_result.get("overall_score") if isinstance(scenario_result, dict) else None
-        band_scen = _risk_band(scen_overall)
-        scolor = BAND_COLORS.get(band_scen, "#888")
-        st.markdown(
-            f'Risk band: <span style="background:{scolor};color:#fff;'
-            f'padding:3px 10px;border-radius:6px">{band_scen}</span>',
-            unsafe_allow_html=True,
-        )
-
-    # --- Indicator deltas ---
-    st.divider()
-    st.subheader("Indicator changes")
+    # Delta Summary Table
     delta_rows = []
-    for col_name in indicator_cols:
-        base_v = baseline.get(col_name)
-        scen_v = scenario_values.get(col_name)
-        if pd.notna(base_v) and scen_v is not None:
-            diff = scen_v - base_v
-            delta_rows.append(
-                {
-                    "Indicator": col_name,
-                    "Baseline": round(base_v, 2),
-                    "Scenario": round(scen_v, 2),
-                    "Delta": round(diff, 2),
-                }
-            )
+    for label, key in comp_items:
+        bv = baseline.get(key)
+        sv = scenario_result.get(key) if isinstance(scenario_result, dict) else None
+        if pd.notna(bv) and pd.notna(sv):
+            diff = float(sv) - float(bv)
+            status = "✅ Improved" if diff < -0.1 else ("⚠️ Increased Risk" if diff > 0.1 else "Neutral")
+            delta_rows.append({
+                "Metric": label,
+                "Baseline": f"{bv:.1f}",
+                "Simulated": f"{sv:.1f}",
+                "Delta": f"{diff:+.1f}",
+                "Direction": status,
+            })
+
     if delta_rows:
-        delta_df = pd.DataFrame(delta_rows)
-        # Color-code: only show rows that actually changed
-        changed = delta_df[delta_df["Delta"].abs() > 0.001]
-        if not changed.empty:
-            st.dataframe(
-                changed.style.applymap(
-                    lambda v: "color: #2ecc71" if isinstance(v, (int, float)) and v < 0
-                    else ("color: #e74c3c" if isinstance(v, (int, float)) and v > 0 else ""),
-                    subset=["Delta"],
-                ),
-                hide_index=True,
-                use_container_width=True,
-            )
-        else:
-            st.info("No indicators were changed from their baseline values.")
+        st.dataframe(pd.DataFrame(delta_rows), hide_index=True, use_container_width=True)

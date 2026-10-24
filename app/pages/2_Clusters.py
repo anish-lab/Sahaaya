@@ -4,30 +4,53 @@ SAHAAYA — Cluster Analysis Page.
 Visualises clustering results: cluster profiles, membership tables,
 PCA-based scatter projection, and auto-generated cluster descriptions.
 """
+from __future__ import annotations
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title="Clusters", page_icon="\U0001f4ca", layout="wide")
+st.set_page_config(
+    page_title="Risk Clusters — SAHAAYA",
+    page_icon="🔮",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 from utils import (  # noqa: E402
     load_features,
     load_clusters,
     load_profiles,
+    get_data_status,
     is_mock_data,
     SUB_COLS,
     BAND_COLORS,
 )
-
-# ---------------------------------------------------------------------------
-st.title("Cluster Analysis")
-st.caption(
-    "Districts are grouped into clusters based on similarity across "
-    "risk dimensions.  Explore cluster composition and characteristics below."
+from ui_theme import (  # noqa: E402
+    inject_custom_theme,
+    render_topbar,
+    render_hero,
+    render_kpi,
+    render_sidebar_brand,
+    style_plotly_fig,
 )
 
 # ---------------------------------------------------------------------------
-# Load data
+# Theme & Top Navigation
+# ---------------------------------------------------------------------------
+inject_custom_theme()
+render_topbar(current_page="Risk Clusters")
+
+render_hero(
+    tag="UNSUPERVISED ML TYPOLOGIES",
+    title="Socio-Economic Cluster Intelligence",
+    description="Algorithmic clustering (K-Means with Silhouette Optimization) grouping districts into structurally homogenous profiles based on shared education, health, and infrastructure dynamics.",
+)
+
+render_sidebar_brand(get_data_status())
+
+# ---------------------------------------------------------------------------
+# Load data & Fallbacks
 # ---------------------------------------------------------------------------
 clusters_df = load_clusters()
 profiles_df = load_profiles()
@@ -35,20 +58,16 @@ features_df = load_features()
 
 if clusters_df is None and (features_df is None or "cluster" not in features_df.columns):
     st.error(
-        "**Cluster data not available.**  "
-        "Run the clustering step of the pipeline to generate "
-        "`cluster_assignments.parquet`."
+        "**Cluster data not found.** "
+        "Run `python src/models/cluster.py` to generate cluster profiles."
     )
     st.stop()
 
 if features_df is not None and is_mock_data(features_df):
-    st.warning("\u26a0\ufe0f  Mock / synthetic data detected.  Results are illustrative only.")
+    st.warning("⚠️ Mock / synthetic data detected. Results are illustrative only.")
 
-# ---------------------------------------------------------------------------
-# Resolve cluster column — prefer cluster_assignments, fall back to features
-# ---------------------------------------------------------------------------
+# Merge cluster into features if needed
 if clusters_df is not None and features_df is not None:
-    # Merge cluster into features if not already there
     if "cluster" not in features_df.columns:
         merged = features_df.merge(
             clusters_df[["district_name", "cluster"]],
@@ -60,7 +79,6 @@ if clusters_df is not None and features_df is not None:
 else:
     merged = features_df.copy() if features_df is not None else clusters_df.copy()
 
-# Pick latest period
 time_col = "period" if "period" in merged.columns else ("year" if "year" in merged.columns else None)
 if time_col and merged[time_col].nunique() > 1:
     latest_period = merged[time_col].dropna().max()
@@ -69,7 +87,7 @@ else:
     view = merged.copy()
 
 if "cluster" not in view.columns:
-    st.error("No `cluster` column found after merging data.")
+    st.error("No `cluster` column found in data.")
     st.stop()
 
 view = view.dropna(subset=["cluster"])
@@ -81,17 +99,28 @@ view["cluster"] = view["cluster"].astype(int)
 n_clusters = view["cluster"].nunique()
 cluster_sizes = view.groupby("cluster").size().reset_index(name="size")
 
-c1, c2, c3 = st.columns(3)
-c1.metric("Number of clusters", n_clusters)
-c2.metric("Largest cluster size", int(cluster_sizes["size"].max()))
-c3.metric("Smallest cluster size", int(cluster_sizes["size"].min()))
+k1, k2, k3, k4 = st.columns(4)
 
-st.divider()
+with k1:
+    render_kpi("Distinct Typologies", n_clusters, icon="🔮", color_accent="#4f46e5", subtitle="K-Means optimal partitions")
+with k2:
+    render_kpi("Largest Cluster", f"{int(cluster_sizes['size'].max())} dists", icon="🏛️", color_accent="#06b6d4", subtitle="Dominant profile size")
+with k3:
+    render_kpi("Smallest Cluster", f"{int(cluster_sizes['size'].min())} dists", icon="🎯", color_accent="#8b5cf6", subtitle="Specialized archetype")
+with k4:
+    render_kpi("Clustering Features", len([c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]), icon="📐", color_accent="#10b981", subtitle="Risk dimensions modeled")
+
+st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Cluster profile comparison
+# Dimension Profiles Tab (Grouped Bar & Heatmap)
 # ---------------------------------------------------------------------------
-st.subheader("Cluster risk profiles")
+st.markdown(
+    "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.25rem; color:#0f172a; margin-bottom:8px;'>"
+    "📊 Comparative Risk Archetypes"
+    "</div>",
+    unsafe_allow_html=True,
+)
 
 dim_cols = [c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]
 
@@ -101,136 +130,116 @@ if dim_cols:
         id_vars="cluster",
         value_vars=dim_cols,
         var_name="Dimension",
-        value_name="Mean score",
+        value_name="Mean Score",
     )
-    # Readable labels
     reverse_map = {v: k for k, v in SUB_COLS.items()}
     profile_long["Dimension"] = profile_long["Dimension"].map(reverse_map).fillna(profile_long["Dimension"])
-    profile_long["cluster"] = profile_long["cluster"].astype(str)
+    profile_long["cluster"] = "Cluster " + profile_long["cluster"].astype(str)
 
-    tab_bar, tab_heat = st.tabs(["Grouped bar chart", "Heatmap"])
+    tab_bar, tab_heat = st.tabs(["📊 Grouped Dimension Profiles", "🔥 Risk Density Matrix (Heatmap)"])
 
     with tab_bar:
-        fig = px.bar(
+        fig_bar = px.bar(
             profile_long,
             x="Dimension",
-            y="Mean score",
+            y="Mean Score",
             color="cluster",
             barmode="group",
             range_y=[0, 100],
-            color_discrete_sequence=px.colors.qualitative.Set2,
-            labels={"cluster": "Cluster"},
+            color_discrete_sequence=["#4f46e5", "#06b6d4", "#f59e0b", "#ec4899"],
+            labels={"cluster": "Archetype", "Mean Score": "Mean Risk (0-100)"},
         )
-        fig.update_layout(height=400)
-        st.plotly_chart(fig, use_container_width=True)
+        style_plotly_fig(fig_bar, height=380, title="Cross-Dimension Vulnerability Benchmark")
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     with tab_heat:
         heat_pivot = profile_long.pivot(
-            index="cluster", columns="Dimension", values="Mean score"
+            index="cluster", columns="Dimension", values="Mean Score"
         )
         fig_heat = px.imshow(
             heat_pivot.values,
             x=heat_pivot.columns.tolist(),
-            y=[f"Cluster {c}" for c in heat_pivot.index],
+            y=heat_pivot.index.tolist(),
             color_continuous_scale="YlOrRd",
             zmin=0,
             zmax=100,
             aspect="auto",
-            labels=dict(color="Mean score"),
+            labels=dict(color="Mean Risk"),
         )
-        fig_heat.update_layout(height=350)
+        style_plotly_fig(fig_heat, height=320, title="Cluster Intensity Heatmap")
         st.plotly_chart(fig_heat, use_container_width=True)
 else:
-    st.info("Dimension score columns not found in the data.")
+    st.info("No dimension score columns found in data.")
 
-st.divider()
+st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Cluster membership table
+# PCA 2D Spatial Scatter
 # ---------------------------------------------------------------------------
-st.subheader("Cluster membership")
+col_pca, col_members = st.columns([1.2, 1])
 
-if profiles_df is not None and "districts" in profiles_df.columns:
-    for _, prow in profiles_df.sort_values("cluster").iterrows():
-        cid = prow["cluster"]
-        csize = prow.get("size", "?")
-        with st.expander(f"Cluster {cid}  ({csize} districts)"):
-            dlist = str(prow["districts"]).split(",")
-            st.write(", ".join(d.strip() for d in dlist))
-else:
+with col_pca:
+    st.markdown(
+        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
+        "🌐 PCA Latent Space Projection"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if dim_cols and len(dim_cols) >= 2:
+        from sklearn.decomposition import PCA
+
+        pca_input = view[dim_cols].fillna(view[dim_cols].mean()).fillna(0.0)
+        n_components = min(2, len(dim_cols))
+        try:
+            pca = PCA(n_components=n_components, random_state=42)
+            coords = pca.fit_transform(pca_input)
+
+            scatter_df = pd.DataFrame(
+                coords, columns=[f"PC{i+1}" for i in range(n_components)], index=view.index
+            )
+            scatter_df["Cluster"] = "Cluster " + view["cluster"].astype(str)
+            scatter_df["District"] = view["district_name"].values
+
+            fig_scatter = px.scatter(
+                scatter_df,
+                x="PC1",
+                y="PC2" if n_components >= 2 else "PC1",
+                color="Cluster",
+                hover_name="District",
+                hover_data={"Cluster": True, "PC1": ":.2f", "PC2": ":.2f"},
+                color_discrete_sequence=["#4f46e5", "#06b6d4", "#f59e0b", "#ec4899"],
+            )
+            fig_scatter.update_traces(marker=dict(size=11, opacity=0.85, line=dict(width=1, color="#ffffff")))
+            style_plotly_fig(fig_scatter, height=420)
+            st.plotly_chart(fig_scatter, use_container_width=True)
+
+            explained = pca.explained_variance_ratio_
+            st.caption(
+                f"Principal Components capture {explained[0]:.1%}"
+                + (f" (PC1) and {explained[1]:.1%} (PC2)" if len(explained) > 1 else "")
+                + " of overall variance."
+            )
+        except Exception as exc:
+            st.warning(f"PCA projection: {exc}")
+    else:
+        st.info("At least 2 dimensions needed for PCA projection.")
+
+with col_members:
+    st.markdown(
+        "<div style='font-family:Outfit,sans-serif; font-weight:700; font-size:1.15rem; color:#0f172a; margin-bottom:10px;'>"
+        "🏛️ Constituent Districts by Cluster"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
     for cid in sorted(view["cluster"].unique()):
         members = sorted(view[view["cluster"] == cid]["district_name"].dropna().unique())
-        with st.expander(f"Cluster {cid}  ({len(members)} districts)"):
-            st.write(", ".join(members))
+        c_badge = f"<span style='background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;'>{len(members)} districts</span>"
 
-st.divider()
-
-# ---------------------------------------------------------------------------
-# PCA scatter plot
-# ---------------------------------------------------------------------------
-st.subheader("Cluster scatter (PCA projection)")
-
-if dim_cols and len(dim_cols) >= 2:
-    from sklearn.decomposition import PCA  # lazy import
-
-    pca_input = view[dim_cols].fillna(view[dim_cols].mean()).fillna(0.0)
-    n_components = min(2, len(dim_cols))
-
-    try:
-        pca = PCA(n_components=n_components, random_state=42)
-        coords = pca.fit_transform(pca_input)
-
-        scatter_df = pd.DataFrame(
-            coords, columns=[f"PC{i+1}" for i in range(n_components)], index=view.index
-        )
-        scatter_df["Cluster"] = view["cluster"].astype(str).values
-        scatter_df["District"] = view["district_name"].values
-
-        fig_scatter = px.scatter(
-            scatter_df,
-            x="PC1",
-            y="PC2" if n_components >= 2 else "PC1",
-            color="Cluster",
-            hover_data=["District"],
-            color_discrete_sequence=px.colors.qualitative.Set2,
-        )
-        fig_scatter.update_layout(height=500)
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
-        explained = pca.explained_variance_ratio_
-        st.caption(
-            f"PC1 explains {explained[0]:.0%}"
-            + (f", PC2 explains {explained[1]:.0%}" if len(explained) > 1 else "")
-            + " of variance in dimension scores."
-        )
-    except Exception as exc:
-        st.warning(f"PCA projection failed: {exc}")
-else:
-    st.info("Need at least 2 dimension-score columns for PCA projection.")
-
-st.divider()
-
-# ---------------------------------------------------------------------------
-# Cluster descriptions (auto-generated)
-# ---------------------------------------------------------------------------
-st.subheader("Cluster characteristics")
-
-if dim_cols:
-    profile_data = view.groupby("cluster")[dim_cols].mean()
-    reverse_map = {v: k for k, v in SUB_COLS.items()}
-
-    for cid in sorted(profile_data.index):
-        row = profile_data.loc[cid]
-        highest = row.idxmax()
-        lowest = row.idxmin()
-        members = sorted(view[view["cluster"] == cid]["district_name"].dropna().unique())
-
-        st.markdown(f"**Cluster {cid}** ({len(members)} districts)")
-        bullets = [
-            f"- Highest average risk: **{reverse_map.get(highest, highest)}** ({row[highest]:.1f})",
-            f"- Lowest average risk: **{reverse_map.get(lowest, lowest)}** ({row[lowest]:.1f})",
-            f"- Overall mean: **{row.mean():.1f}**",
-        ]
-        st.markdown("\n".join(bullets))
-else:
-    st.info("Cannot generate descriptions without dimension scores.")
+        with st.expander(f"Cluster {cid} ({len(members)} districts)", expanded=(cid == 0)):
+            pills = "".join(
+                f"<span style='display:inline-block; background:#f1f5f9; color:#1e293b; padding:4px 10px; margin:3px 4px; border-radius:8px; font-size:0.8rem; font-weight:600; border:1px solid #e2e8f0;'>{m}</span>"
+                for m in members
+            )
+            st.markdown(f"<div style='line-height:2;'>{pills}</div>", unsafe_allow_html=True)
