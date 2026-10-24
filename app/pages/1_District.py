@@ -220,8 +220,8 @@ if indicator_cols:
     indicator_data.columns = ["Value"]
     indicator_data.index.name = "Indicator"
     indicator_data["Value"] = indicator_data["Value"].apply(
-        lambda v: round(v, 2) if isinstance(v, (int, float)) and pd.notna(v) else ("N/A" if pd.isna(v) else v)
-    )
+        lambda v: f"{v:.2f}" if isinstance(v, (int, float)) and pd.notna(v) else ("N/A" if pd.isna(v) else str(v))
+    ).astype(str)
     st.dataframe(indicator_data, use_container_width=True)
 else:
     st.info("No additional source indicators found beyond the risk scores.")

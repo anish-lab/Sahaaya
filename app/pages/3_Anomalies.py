@@ -140,7 +140,7 @@ if n_flagged > 0 and features_df is not None:
     district_row = fview[fview["district_name"] == selected]
 
     if not district_row.empty:
-        dim_cols = [c for c in SUB_COLS.values() if c in fview.columns]
+        dim_cols = [c for c in SUB_COLS.values() if c in fview.columns and fview[c].notna().any()]
         if dim_cols:
             district_vals = district_row.iloc[0][dim_cols]
             mean_vals = fview[dim_cols].mean()

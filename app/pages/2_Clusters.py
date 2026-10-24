@@ -93,7 +93,7 @@ st.divider()
 # ---------------------------------------------------------------------------
 st.subheader("Cluster risk profiles")
 
-dim_cols = [c for c in SUB_COLS.values() if c in view.columns]
+dim_cols = [c for c in SUB_COLS.values() if c in view.columns and view[c].notna().any()]
 
 if dim_cols:
     profile_data = view.groupby("cluster")[dim_cols].mean().reset_index()
@@ -173,7 +173,7 @@ st.subheader("Cluster scatter (PCA projection)")
 if dim_cols and len(dim_cols) >= 2:
     from sklearn.decomposition import PCA  # lazy import
 
-    pca_input = view[dim_cols].fillna(view[dim_cols].mean())
+    pca_input = view[dim_cols].fillna(view[dim_cols].mean()).fillna(0.0)
     n_components = min(2, len(dim_cols))
 
     try:
