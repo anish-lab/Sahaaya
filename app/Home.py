@@ -353,7 +353,7 @@ with col_scatter:
         
         style_editorial_figure(
             fig_corr,
-            height=380,
+            height=430,
             title="Bi-Axial Sectoral Correlation",
             subtitle=f"Dashed rules denote national medians (Edu: {med_edu:.1f}, Health: {med_health:.1f})",
         )
@@ -510,7 +510,7 @@ with col_bench_chart:
 
         style_editorial_figure(
             fig_bench,
-            height=400,
+            height=450,
             title="External Validity: SAHAAYA Index vs. NITI Aayog National MPI",
             subtitle=f"Spearman rho = {rho_val:.4f} · Pearson r = {r_val:.4f} · N = 36 States/UTs",
         )

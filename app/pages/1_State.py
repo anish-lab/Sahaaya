@@ -265,7 +265,7 @@ with col_left:
 
         style_editorial_figure(
             fig_dim,
-            height=320,
+            height=370,
             title=f"Dimensional Burden — {state_name}",
             subtitle="Solid bars reflect state index; grey bars reflect national median (0 = optimal, 100 = distress)",
         )
@@ -273,7 +273,7 @@ with col_left:
             barmode="overlay",
             xaxis=dict(range=[0, 105], title=dict(text="Vulnerability Index (0-100)", font=dict(family="IBM Plex Mono, monospace", size=10))),
             yaxis=dict(title=""),
-            legend=dict(x=1, y=1.05, orientation="h"),
+            legend=dict(x=1.0, y=1.08, orientation="h", yanchor="bottom"),
         )
         st.plotly_chart(fig_dim, use_container_width=True)
         source_note("UDISE+ 2022-23 · NFHS-5 (2019-21) standardized indicator matrices")

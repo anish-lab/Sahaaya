@@ -426,7 +426,7 @@ with col_diag_chart:
     fig_diag.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        height=360,
+        height=400,
         font=dict(family="IBM Plex Sans, sans-serif", size=11, color="#2C312E"),
         title=dict(
             text="<b>Cluster Rigor: Elbow Curve & Silhouette Analysis</b><br><span style='font-size:11px; font-family:IBM Plex Mono; color:#6E756C;'>Inertia inflection and silhouette peak across k in [2, 7]</span>",
@@ -461,15 +461,15 @@ with col_diag_chart:
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.02,
+            y=1.08,
             xanchor="right",
-            x=1,
+            x=1.0,
             font=dict(size=10, family="IBM Plex Mono"),
-            bgcolor="rgba(247, 245, 238, 0.85)",
+            bgcolor="rgba(247, 245, 238, 0.90)",
             bordercolor="#E2DED4",
             borderwidth=1,
         ),
-        margin=dict(l=10, r=15, t=50, b=26),
+        margin=dict(l=15, r=20, t=92, b=38),
     )
     st.plotly_chart(fig_diag, use_container_width=True)
     source_note("StandardScaler normalization · KMeans (k-means++ initialization, n_init=10) · 50-seed Monte Carlo stability")
