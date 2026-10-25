@@ -85,17 +85,13 @@ st.markdown(
 )
 
 with st.expander("Mathematical Recomputation Formula & Uncertainty Accounting"):
-    st.markdown(
-        """
-        ##### Mathematical Formulation of Counterfactual Propagation:
-        1. **Indicator Min-Max Rescaling**:
-           $$S_i(x_i) = 100 \times \frac{x_i - \min(X_i)}{\max(X_i) - \min(X_i)} \quad \text{(or inverted when higher value implies lower risk)}$$
-        2. **Dimension Pillar Aggregation**:
-           $$D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i)$$
-        3. **Dynamic Renormalized Index**:
-           $$V_{\text{sim}} = \frac{\sum_{k \in K_{\text{obs}}} w_k D_k}{\sum_{k \in K_{\text{obs}}} w_k} \quad \text{with 95% Confidence Band: } [V_{\text{sim}} - 1.8, \; V_{\text{sim}} + 1.8]$$
-        """
-    )
+    st.markdown("##### Mathematical Formulation of Counterfactual Propagation:")
+    st.markdown("**1. Indicator Min-Max Rescaling** *(or inverted when higher value implies lower risk)*:")
+    st.latex(r"S_i(x_i) = 100 \times \frac{x_i - \min(X_i)}{\max(X_i) - \min(X_i)}")
+    st.markdown("**2. Dimension Pillar Aggregation**:")
+    st.latex(r"D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i)")
+    st.markdown("**3. Overall Vulnerability Index with 95% Confidence Band**:")
+    st.latex(r"V_{\text{sim}} = \frac{1}{|K|} \sum_{k \in K} D_k \quad \pm 1.8 \text{ pts (95\% CI)}")
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -243,7 +239,7 @@ with p_col1:
         on_click=apply_preset_callback,
         args=("reset", baseline, indicator_cols),
         use_container_width=True,
-        kind="secondary",
+        type="secondary",
     )
 with p_col2:
     st.button(
@@ -251,7 +247,7 @@ with p_col2:
         on_click=apply_preset_callback,
         args=("infra", baseline, indicator_cols),
         use_container_width=True,
-        kind="secondary",
+        type="secondary",
     )
 with p_col3:
     st.button(
@@ -259,7 +255,7 @@ with p_col3:
         on_click=apply_preset_callback,
         args=("edu", baseline, indicator_cols),
         use_container_width=True,
-        kind="secondary",
+        type="secondary",
     )
 with p_col4:
     st.button(
@@ -267,7 +263,7 @@ with p_col4:
         on_click=apply_preset_callback,
         args=("health", baseline, indicator_cols),
         use_container_width=True,
-        kind="secondary",
+        type="secondary",
     )
 
 st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
