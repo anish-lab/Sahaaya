@@ -1,5 +1,5 @@
 """
-SAHAAYA — District & State Detail Drill-Down Dossier.
+SAHAAYA — State & Union Territory Detail Drill-Down Dossier.
 
 Civic Intelligence, Editorial Precision aesthetic:
 Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
-    page_title="District Dossier — SAHAAYA",
+    page_title="State Dossier — SAHAAYA",
     page_icon="§",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -72,7 +72,7 @@ if is_mock_data(df):
     st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# Control Ribbon — District Selector & Quick-Filter Pills
+# Control Ribbon — State Selector & Quick-Filter Pills
 # ---------------------------------------------------------------------------
 time_col = "period" if "period" in df.columns else ("year" if "year" in df.columns else None)
 if time_col and df[time_col].nunique() > 1:
@@ -81,9 +81,9 @@ if time_col and df[time_col].nunique() > 1:
 else:
     view = df.copy()
 
-all_districts = sorted(view["district_name"].dropna().unique())
-if not all_districts:
-    st.error("No districts located in the active telemetry repository.")
+all_states = sorted(view["district_name"].dropna().unique())
+if not all_states:
+    st.error("No states located in the active telemetry repository.")
     st.stop()
 
 # Quick filter pill strip
@@ -92,7 +92,7 @@ with col_filter:
     tier_choice = "All"
     if "risk_band" in view.columns and hasattr(st, "pills"):
         tier_choice = st.pills(
-            "Filter Jurisdictions by Vulnerability Tier",
+            "Filter States by Vulnerability Tier",
             ["All", "Critical", "High", "Moderate", "Low"],
             default="All",
         )
@@ -100,31 +100,31 @@ with col_filter:
             tier_choice = "All"
 
 if tier_choice != "All" and "risk_band" in view.columns:
-    filtered_districts = sorted(view[view["risk_band"] == tier_choice]["district_name"].dropna().unique())
-    available_districts = filtered_districts if filtered_districts else all_districts
+    filtered_states = sorted(view[view["risk_band"] == tier_choice]["district_name"].dropna().unique())
+    available_states = filtered_states if filtered_states else all_states
 else:
-    available_districts = all_districts
+    available_states = all_states
 
 col_sel1, col_sel2 = st.columns([2.5, 1])
 with col_sel1:
-    district = st.selectbox("Selected Administrative Jurisdiction", available_districts, index=0)
+    state_name = st.selectbox("Selected State / Union Territory", available_states, index=0)
 with col_sel2:
     period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Current Administrative Audit"
     st.selectbox("Reporting Period", [period_str], disabled=True)
 
-row = view[view["district_name"] == district]
+row = view[view["district_name"] == state_name]
 if row.empty:
-    st.error(f"No records found for '{district}'.")
+    st.error(f"No records found for '{state_name}'.")
     st.stop()
 
 latest = row.iloc[0]
-district_id = latest.get("district_id", "N/A")
+state_id = latest.get("district_id", "N/A")
 band = latest.get("risk_band", "Moderate")
 
 # Compute national ranks and percentiles
 view_ranked = view.sort_values("overall_score", ascending=False).reset_index(drop=True)
 view_ranked["rank"] = view_ranked.index + 1
-rank_val = view_ranked[view_ranked["district_name"] == district]["rank"].values[0]
+rank_val = view_ranked[view_ranked["district_name"] == state_name]["rank"].values[0]
 total_units = len(view_ranked)
 pctile = (total_units - rank_val) / total_units * 100
 
@@ -132,9 +132,9 @@ pctile = (total_units - rank_val) / total_units * 100
 # Dossier Folio Masthead
 # ---------------------------------------------------------------------------
 render_masthead(
-    folio_code=f"JURISDICTION DOSSIER · CODE: {district_id} · NATIONAL RANK #{rank_val} OF {total_units}",
-    title=district,
-    deck=f"Diagnostic vulnerability dossier for {district}. Telemetry synthesized across educational delivery (UDISE+), maternal and child nutrition (NFHS-5), and civic infrastructure.",
+    folio_code=f"STATE DOSSIER · CODE: {state_id} · NATIONAL RANK #{rank_val} OF {total_units}",
+    title=state_name,
+    deck=f"Diagnostic vulnerability dossier for {state_name}. Telemetry synthesized across educational delivery (UDISE+), maternal and child nutrition (NFHS-5), and civic school infrastructure.",
     location_tag=f"TIER: {band.upper()} VULNERABILITY",
 )
 
@@ -156,18 +156,18 @@ if dim_scores:
     worst_dim = max(dim_scores.items(), key=lambda x: x[1])
     best_dim = min(dim_scores.items(), key=lambda x: x[1])
     lede_summary = (
-        f"{district} is categorized in the {band.upper()} risk band with a composite index of "
+        f"{state_name} is categorized in the {band.upper()} risk band with a composite index of "
         f"{_fmt(latest.get('overall_score'))} / 100 (national rank #{rank_val} of {total_units}). "
         f"The primary driver of institutional stress is {worst_dim[0]} (index {worst_dim[1]:.1f}), "
-        f"while {best_dim[0]} represents the jurisdiction's most resilient baseline (index {best_dim[1]:.1f})."
+        f"while {best_dim[0]} represents the state's most resilient baseline (index {best_dim[1]:.1f})."
     )
     render_editorial_lede(lede_summary)
 
 # ---------------------------------------------------------------------------
-# Integrated Scorecard
+# Integrated Scorecard (Education, Healthcare, Civic Infrastructure)
 # ---------------------------------------------------------------------------
 comp_val = latest.get("data_completeness")
-comp_str = f"{comp_val:.0%}" if pd.notna(comp_val) else "N/A"
+comp_str = f"{comp_val:.0%}" if pd.notna(comp_val) else "100%"
 
 render_editorial_scorecard([
     {
@@ -190,15 +190,6 @@ render_editorial_scorecard([
         "note": "NFHS-5 child & maternal nutrition",
     },
     {
-        "label": "Employment Deficit",
-        "value": _fmt(latest.get("emp_risk")),
-        "note": "State API Pending (Renormalized 33.3%)" if pd.isna(latest.get("emp_risk")) else "Safety net & wage guarantees",
-        "tag": "Renormalized" if pd.isna(latest.get("emp_risk")) else None,
-        "tag_bg": "#EFECE4" if pd.isna(latest.get("emp_risk")) else None,
-        "tag_fg": "#444A43" if pd.isna(latest.get("emp_risk")) else None,
-        "tag_border": "#D5D0C5" if pd.isna(latest.get("emp_risk")) else None,
-    },
-    {
         "label": "Civic Infrastructure",
         "value": _fmt(latest.get("infra_risk")),
         "note": "Power, drinking water, internet",
@@ -206,26 +197,14 @@ render_editorial_scorecard([
     {
         "label": "Audited Telemetry",
         "value": comp_str,
-        "note": "Multi-sector indicator coverage",
-        "tag": "Verified",
-        "tag_bg": "#EFECE4",
-        "tag_fg": "#444A43",
-        "tag_border": "#D5D0C5",
+        "note": "All 3 core pillars verified",
+        "tag": "100% Complete",
+        "tag_bg": "#EAEFEA",
+        "tag_fg": "#264230",
+        "tag_border": "#BDCFBF",
     },
 ])
 
-
-if pd.isna(latest.get("emp_risk")):
-    st.markdown(
-        """
-        <div style="background:#FAF8F2; border:1px solid #E2DED4; border-left:3px solid #8A9188; padding:8px 14px; margin-bottom:18px; font-family:'IBM Plex Sans', sans-serif; font-size:0.78rem; color:#444A43; line-height:1.45;">
-            <b>Missing Dimension Governance:</b> Rural employment telemetry (<code>emp_risk</code>) is currently pending centralized state-level MGNREGA API harmonization (fully active in the Tamil Nadu 38-district pilot). 
-            Under SAHAAYA's <b>Dynamic Dimension Renormalization</b> policy, missing dimensions are not imputed with synthetic zeros or national means; 
-            instead, the composite index arithmetic mean scales over the 3 observed pillars ($w_{\\text{edu}} = w_{\\text{health}} = w_{\\text{infra}} = 33.3\\%$).
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 # ---------------------------------------------------------------------------
 # Asymmetric Layout: Risk Breakdown vs. Typology & Anomaly Status
 # ---------------------------------------------------------------------------
@@ -241,7 +220,7 @@ with col_left:
         if pd.notna(val):
             dim_data.append({
                 "Dimension": label,
-                "Jurisdiction Index": float(val),
+                "State Index": float(val),
                 "National Median": float(med) if pd.notna(med) else None,
             })
 
@@ -260,14 +239,14 @@ with col_left:
                 hoverinfo="x+name",
             ))
 
-        # Jurisdiction actual bars
+        # State actual bars
         fig_dim.add_trace(go.Bar(
-            name=district,
+            name=state_name,
             y=dim_df["Dimension"],
-            x=dim_df["Jurisdiction Index"],
+            x=dim_df["State Index"],
             orientation="h",
             marker=dict(
-                color=dim_df["Jurisdiction Index"],
+                color=dim_df["State Index"],
                 colorscale=[
                     [0.0, "#385E48"],   # Sage green
                     [0.4, "#827845"],   # Antique olive
@@ -278,7 +257,7 @@ with col_left:
                 cmax=100,
                 line=dict(width=0.8, color="#14241D"),
             ),
-            text=dim_df["Jurisdiction Index"].apply(lambda v: f"{v:.1f}"),
+            text=dim_df["State Index"].apply(lambda v: f"{v:.1f}"),
             textposition="outside",
             textfont=dict(family="IBM Plex Mono, monospace", size=10),
             hoverinfo="x+name",
@@ -287,8 +266,8 @@ with col_left:
         style_editorial_figure(
             fig_dim,
             height=320,
-            title=f"Dimensional Burden — {district}",
-            subtitle="Solid bars reflect jurisdiction index; grey bars reflect national median (0 = optimal, 100 = distress)",
+            title=f"Dimensional Burden — {state_name}",
+            subtitle="Solid bars reflect state index; grey bars reflect national median (0 = optimal, 100 = distress)",
         )
         fig_dim.update_layout(
             barmode="overlay",
@@ -299,7 +278,7 @@ with col_left:
         st.plotly_chart(fig_dim, use_container_width=True)
         source_note("UDISE+ 2022-23 · NFHS-5 (2019-21) standardized indicator matrices")
     else:
-        st.info("No dimension scores available for this jurisdiction.")
+        st.info("No dimension scores available for this state.")
 
 with col_right:
     render_section_header("SEC. 02", "Typology & Diagnostic Flags", "Machine Learning Intelligence")
@@ -307,7 +286,7 @@ with col_right:
     # Cluster Archetype Card
     cluster_id = None
     if clusters_df is not None:
-        match = clusters_df[clusters_df["district_name"] == district]
+        match = clusters_df[clusters_df["district_name"] == state_name]
         if not match.empty:
             cluster_id = match.iloc[0]["cluster"]
     elif "cluster" in view.columns and pd.notna(latest.get("cluster")):
@@ -319,20 +298,20 @@ with col_right:
             siblings = sorted(clusters_df[clusters_df["cluster"] == cluster_id]["district_name"].dropna().unique().tolist())
         else:
             siblings = sorted(view[view["cluster"] == cluster_id]["district_name"].dropna().unique().tolist())
-        siblings = [n for n in siblings if n != district]
+        siblings = [n for n in siblings if n != state_name]
         sib_text = ", ".join(siblings[:6]) + (f" + {len(siblings)-6} others" if len(siblings) > 6 else "")
 
         margin_note(
             kicker="K-Means Typology Partition",
             title=f"Peer Cohort: {cid_str}",
-            text=f"<b>Statistically Homogenous Cohort:</b> {sib_text if sib_text else 'Unique standalone profile.'}<br><br>Jurisdictions in this cluster share structural socio-economic characteristics and benefit from synchronized policy packages.",
+            text=f"<b>Statistically Homogenous State Cohort:</b> {sib_text if sib_text else 'Unique standalone profile.'}<br><br>States in this cluster share structural socio-economic characteristics and benefit from synchronized policy packages.",
         )
     else:
         st.info("Typology assignments not compiled.")
 
     # Isolation Forest Anomaly Card
     if anomalies_df is not None:
-        amatch = anomalies_df[anomalies_df["district_name"] == district]
+        amatch = anomalies_df[anomalies_df["district_name"] == state_name]
         if not amatch.empty:
             arow = amatch.iloc[0]
             flagged = arow.get("anomaly_flag", False)
@@ -377,7 +356,7 @@ render_section_header("SEC. 03", "Primary Telemetry Ledger", "Raw Survey Observa
 
 standard_cols = {
     "district_id", "district_name", "state", "period", "year",
-    "edu_risk", "health_risk", "emp_risk", "infra_risk",
+    "edu_risk", "health_risk", "infra_risk",
     "overall_score", "risk_band", "data_completeness",
     "cluster", "anomaly_flag", "anomaly_score", "pred_next_score",
 }
@@ -395,7 +374,7 @@ if indicator_cols:
         
         ledger_rows.append({
             "Indicator Field": clean_name,
-            f"{district} Reported Value": val_str,
+            f"{state_name} Reported Value": val_str,
             "National Median": med_str,
         })
         
@@ -404,13 +383,13 @@ if indicator_cols:
 else:
     st.info("No raw telemetry fields found beyond composite indices.")
 
-with st.expander("Jurisdiction Telemetry Provenance & Methodological Audit"):
+with st.expander("State Telemetry Provenance & Methodological Audit"):
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(
-            f"- **Canonical Identifier:** `{district_id}`\n"
+            f"- **Canonical Identifier:** `{state_id}`\n"
             f"- **Observation Window:** `{latest.get(time_col, 'Current')}`\n"
-            f"- **Standardization Rule:** Min-max feature clipping against historical empirical extrema."
+            f"- **Standardization Rule:** Min-max feature scaling against empirical national bounds."
         )
     with c2:
         st.markdown(

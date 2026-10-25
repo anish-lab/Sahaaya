@@ -105,13 +105,14 @@ python -c "from src.models.cluster import ClusterModel; ClusterModel('data/proce
   $$D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i), \quad V_{\text{sim}} = \frac{1}{|K_{\text{obs}}|} \sum_{k \in K_{\text{obs}}} D_k$$
 - **Uncertainty Bounds**: Every simulated score includes an empirical observational uncertainty band of **$\pm 1.8$ points (95% CI)** based on survey sampling and administrative measurement error.
 
-### 6. Missing Data Handling: Dynamic Dimension Renormalization
-- **Why Employment (`emp_risk`) is N/A in the National Dataset**:
-  State-level MGNREGA data feeds from data.gov.in are currently undergoing centralized API harmonization. District-level MGNREGA is fully active in the Tamil Nadu pilot.
-- **No Synthetic Zero or Mean Imputation**: Imputing zeros would arbitrarily punish states; imputing national means would artificially compress variance.
-- **Dynamic Renormalization**: The composite index arithmetic mean dynamically rescales across the 3 observed dimensions:
+### 6. Three Verified Pillars & Data Integrity (100% Telemetry)
+- **Exclusion of Unharmonized Datasets**: Employment metrics were removed from the production index because open state-level feeds are currently awaiting centralized data.gov.in harmonization.
+- **Three Core Statutory Pillars**:
+  1. 🎓 **Education Vulnerability (`edu_risk`)**: Pupil-teacher ratios, female literacy rates, schooling 10+ years, and dropout rates (UDISE+).
+  2. 🏥 **Healthcare Deficit (`health_risk`)**: Child stunting, wasting, institutional deliveries, and health insurance coverage (NFHS-5).
+  3. 🏗️ **Civic Infrastructure (`infra_risk`)**: School electricity, drinking water, sanitation facilities, internet, and computer access (UDISE+).
+- **100% Data Completeness**: With all 3 statutory pillars fully verified and present across all 36 States and Union Territories, `data_completeness = 1.0` (100%) with zero missingness and zero synthetic imputation required:
   $$V = \frac{\text{edu\_risk} + \text{health\_risk} + \text{infra\_risk}}{3} \quad (w_{\text{edu}} = w_{\text{health}} = w_{\text{infra}} = 33.33\%)$$
-  `data_completeness` is transparently recorded as $0.75$ ($75\%$).
 
 ### 7. Collinearity Audit & Circular Leakage Prevention
 - **Collinear Feature Pairs ($|r| \ge 0.70$)**:
@@ -133,7 +134,7 @@ python src/evaluation/correlation_leakage.py
 | Page | File | Core Functionality | Key Visualizations |
 |---|---|---|---|
 | **Overview** | [`app/Home.py`](app/Home.py) | All-India vulnerability census across 36 States/UTs | GeoJSON Choropleth map, NITI Aayog MPI validation scatter, bi-axial sectoral correlation |
-| **Dossier** | [`app/pages/1_District.py`](app/pages/1_District.py) | In-depth jurisdictional drilldown | Dimensional benchmark overlay bars, typology peer cards, telemetry ledger |
+| **State Dossier** | [`app/pages/1_State.py`](app/pages/1_State.py) | In-depth State & UT drilldown | Dimensional benchmark overlay bars, typology peer cards, telemetry ledger |
 | **Clusters** | [`app/pages/2_Clusters.py`](app/pages/2_Clusters.py) | Unsupervised socioeconomic archetypes | 2D PCA latent biplot, Elbow & Silhouette curves, policy playbooks |
 | **Anomalies** | [`app/pages/3_Anomalies.py`](app/pages/3_Anomalies.py) | Multi-variate outlier detection | Decision score distribution, outlier vs national mean bar comparison, divergence ledger |
 | **Simulator** | [`app/pages/4_Simulator.py`](app/pages/4_Simulator.py) | Interactive what-if policy explorer | Rapid preset scenarios, parameter sliders, before/after scorecard with $\pm 1.8$ pt CI |
@@ -211,7 +212,7 @@ Sahaaya/
 │   ├── ui_theme.py                    # FT/Economist editorial design tokens & CSS
 │   ├── utils.py                       # Cached data loaders & GeoJSON bounds
 │   └── pages/
-│       ├── 1_District.py              # Jurisdictional dossier & missingness note
+│       ├── 1_State.py              # Jurisdictional dossier & missingness note
 │       ├── 2_Clusters.py              # Field guide, PCA biplot & cluster rigor
 │       ├── 3_Anomalies.py             # Isolation Forest registry & attribution
 │       └── 4_Simulator.py             # Non-causal what-if explorer & ±1.8 pt CI

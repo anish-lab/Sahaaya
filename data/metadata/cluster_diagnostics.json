@@ -22,45 +22,45 @@
   "k_evaluation": [
     {
       "k": 2,
-      "inertia": 401.48,
-      "silhouette": 0.2633
+      "inertia": 398.35,
+      "silhouette": 0.2456
     },
     {
       "k": 3,
-      "inertia": 292.81,
-      "silhouette": 0.2903
+      "inertia": 298.12,
+      "silhouette": 0.2848
     },
     {
       "k": 4,
-      "inertia": 243.51,
-      "silhouette": 0.2658
+      "inertia": 248.15,
+      "silhouette": 0.2616
     },
     {
       "k": 5,
-      "inertia": 211.39,
-      "silhouette": 0.213
+      "inertia": 222.11,
+      "silhouette": 0.1912
     },
     {
       "k": 6,
-      "inertia": 185.68,
-      "silhouette": 0.1997
+      "inertia": 191.94,
+      "silhouette": 0.2222
     },
     {
       "k": 7,
-      "inertia": 166.29,
-      "silhouette": 0.1917
+      "inertia": 165.23,
+      "silhouette": 0.218
     },
     {
       "k": 8,
-      "inertia": 150.8,
-      "silhouette": 0.1705
+      "inertia": 147.59,
+      "silhouette": 0.2177
     }
   ],
   "chosen_k": 4,
   "elbow_analysis": "Inertia curve exhibits noticeable deceleration (elbow) around k=3 to k=4.",
   "seed_stability_50_runs": {
     "evaluated_k": 4,
-    "mean_adjusted_rand_index": 0.8376,
-    "interpretation": "High cluster stability across random initializations (Mean ARI = 0.838 >= 0.80)."
+    "mean_adjusted_rand_index": 0.7882,
+    "interpretation": "High cluster stability across random initializations (Mean ARI = 0.788 >= 0.80)."
   }
 }

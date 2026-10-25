@@ -6,10 +6,10 @@
     "infra_risk"
   ],
   "n_simulations": 200,
-  "mean_top10_stability": 0.9395,
-  "mean_spearman_rho": 0.9816,
-  "min_spearman_rho": 0.8553,
-  "pca_variance_explained": 0.6202,
-  "pca_spearman_rho": 0.999,
-  "justification": "Equal weighting reflects the normative principle that rights to education, health, and basic physical infrastructure are mutually non-substitutable and intrinsically of equal importance. Empirical robustness testing demonstrates that the Top-10 vulnerable priority list has 94.0% stability under random weight perturbations (+/- 30%), and the equal-weight index correlates at rho=0.9990 with an unsupervised data-driven PCA index."
+  "mean_top10_stability": 0.912,
+  "mean_spearman_rho": 0.9771,
+  "min_spearman_rho": 0.8873,
+  "pca_variance_explained": 0.6359,
+  "pca_spearman_rho": 0.992,
+  "justification": "Equal weighting reflects the normative principle that rights to education, health, and basic physical infrastructure are mutually non-substitutable and intrinsically of equal importance. Empirical robustness testing demonstrates that the Top-10 vulnerable priority list has 91.2% stability under random weight perturbations (+/- 30%), and the equal-weight index correlates at rho=0.9920 with an unsupervised data-driven PCA index."
 }

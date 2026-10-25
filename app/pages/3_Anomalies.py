@@ -152,7 +152,7 @@ with col_table:
         show = flagged_df[display_cols].copy()
         show.rename(
             columns={
-                "district_name": "Jurisdiction",
+                "district_name": "State / UT",
                 "anomaly_score": "Intensity Score",
                 "unusual_features": "Primary Divergent Feature Drivers",
             },
@@ -189,7 +189,7 @@ with col_hist:
         st.plotly_chart(fig_hist, use_container_width=True)
 
 # ---------------------------------------------------------------------------
-# Detailed Indicator Comparison for a Selected Flagged District
+# Detailed Indicator Comparison for a Selected Flagged State
 # ---------------------------------------------------------------------------
 if n_flagged > 0 and features_df is not None:
     render_section_header("SEC. 03", "Diagnostic Comparative Decomposition", "Target Outlier vs. National Baseline")
@@ -198,7 +198,7 @@ if n_flagged > 0 and features_df is not None:
     col_outlier_sel, col_explain = st.columns([2, 1])
     
     with col_outlier_sel:
-        selected = st.selectbox("Select Target Outlier for Diagnostic Drill-Down", flagged_list, index=0)
+        selected = st.selectbox("Select Target State for Diagnostic Drill-Down", flagged_list, index=0)
     with col_explain:
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         if hasattr(st, "popover"):
@@ -218,22 +218,22 @@ if n_flagged > 0 and features_df is not None:
     else:
         fview = features_df.copy()
 
-    district_row = fview[fview["district_name"] == selected]
+    state_row = fview[fview["district_name"] == selected]
 
-    if not district_row.empty:
+    if not state_row.empty:
         col_comp_chart, col_comp_note = st.columns([1.5, 1])
         
         with col_comp_chart:
             dim_cols = [c for c in SUB_COLS.values() if c in fview.columns and fview[c].notna().any()]
             if dim_cols:
-                district_vals = district_row.iloc[0][dim_cols]
+                state_vals = state_row.iloc[0][dim_cols]
                 mean_vals = fview[dim_cols].mean()
 
                 reverse_map = {v: k for k, v in SUB_COLS.items()}
                 comp = pd.DataFrame(
                     {
                         "Dimension": [reverse_map.get(c, c) for c in dim_cols],
-                        selected: [round(v, 1) if pd.notna(v) else None for v in district_vals],
+                        selected: [round(v, 1) if pd.notna(v) else None for v in state_vals],
                         "National Baseline Average": [round(v, 1) for v in mean_vals],
                     }
                 )

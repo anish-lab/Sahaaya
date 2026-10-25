@@ -7,22 +7,22 @@
     {
       "state": "Meghalaya",
       "anomaly_score": 100.0,
-      "diverging_features": "schools_with_electricity_pct, schools_with_drinking_water_pct, schools_with_toilets_pct, stunting_pct, institutional_births_pct, health_risk, infra_risk, overall_score"
+      "diverging_features": "schools_with_electricity_pct, schools_with_drinking_water_pct, schools_with_toilets_pct, stunting_pct, institutional_births_pct, infra_risk, overall_score"
     },
     {
       "state": "Bihar",
-      "anomaly_score": 80.35,
+      "anomaly_score": 84.95,
       "diverging_features": "enrolment, pupil_teacher_ratio, stunting_pct, wasting_pct, edu_risk, health_risk, overall_score"
     },
     {
       "state": "Nagaland",
-      "anomaly_score": 72.81,
+      "anomaly_score": 71.55,
       "diverging_features": "schools_with_drinking_water_pct, institutional_births_pct, health_risk"
     },
     {
-      "state": "Jharkhand",
-      "anomaly_score": 53.69,
-      "diverging_features": "pupil_teacher_ratio, stunting_pct, edu_risk, health_risk"
+      "state": "Kerala",
+      "anomaly_score": 51.06,
+      "diverging_features": "stunting_pct, schooling_10plus_pct, edu_risk, overall_score"
     }
   ]
 }

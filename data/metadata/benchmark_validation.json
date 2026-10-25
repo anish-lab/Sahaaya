@@ -1,247 +1,247 @@
 {
   "benchmark_name": "NITI Aayog National Multidimensional Poverty Index (2023)",
   "sample_size": 36,
-  "spearman_rho": 0.9037,
-  "spearman_pvalue": 4.486789834579479e-14,
-  "pearson_r": 0.8883,
-  "pearson_pvalue": 4.904177294983534e-13,
-  "interpretation": "Strong positive rank correlation (rho=0.904, p=4.49e-14) empirically validates that SAHAAYA composite vulnerability captures external multidimensional socioeconomic deprivation across India.",
+  "spearman_rho": 0.8798,
+  "spearman_pvalue": 1.598762182800163e-12,
+  "pearson_r": 0.8754,
+  "pearson_pvalue": 2.857825809546764e-12,
+  "interpretation": "Strong positive rank correlation (rho=0.880, p=1.60e-12) empirically validates that SAHAAYA composite vulnerability captures external multidimensional socioeconomic deprivation across India.",
   "state_comparisons": [
     {
-      "state": "Meghalaya",
-      "sahaaya_score": 73.26,
-      "sahaaya_rank": 1,
-      "niti_mpi_pct": 27.79,
-      "niti_mpi_rank": 3,
-      "rank_delta": -2
-    },
-    {
       "state": "Bihar",
-      "sahaaya_score": 69.25,
-      "sahaaya_rank": 2,
+      "sahaaya_score": 74.15,
+      "sahaaya_rank": 1,
       "niti_mpi_pct": 33.76,
       "niti_mpi_rank": 1,
-      "rank_delta": 1
+      "rank_delta": 0
+    },
+    {
+      "state": "Meghalaya",
+      "sahaaya_score": 69.97,
+      "sahaaya_rank": 2,
+      "niti_mpi_pct": 27.79,
+      "niti_mpi_rank": 3,
+      "rank_delta": -1
     },
     {
       "state": "Jharkhand",
-      "sahaaya_score": 56.88,
+      "sahaaya_score": 57.86,
       "sahaaya_rank": 3,
       "niti_mpi_pct": 28.81,
       "niti_mpi_rank": 2,
       "rank_delta": 1
     },
     {
-      "state": "Nagaland",
-      "sahaaya_score": 54.28,
-      "sahaaya_rank": 4,
-      "niti_mpi_pct": 15.43,
-      "niti_mpi_rank": 9,
-      "rank_delta": -5
-    },
-    {
       "state": "Tripura",
-      "sahaaya_score": 53.07,
-      "sahaaya_rank": 5,
+      "sahaaya_score": 56.43,
+      "sahaaya_rank": 4,
       "niti_mpi_pct": 13.11,
       "niti_mpi_rank": 11,
-      "rank_delta": -6
-    },
-    {
-      "state": "Assam",
-      "sahaaya_score": 52.2,
-      "sahaaya_rank": 6,
-      "niti_mpi_pct": 19.35,
-      "niti_mpi_rank": 6,
-      "rank_delta": 0
+      "rank_delta": -7
     },
     {
       "state": "Uttar Pradesh",
-      "sahaaya_score": 49.26,
-      "sahaaya_rank": 7,
+      "sahaaya_score": 55.82,
+      "sahaaya_rank": 5,
       "niti_mpi_pct": 22.93,
       "niti_mpi_rank": 4,
-      "rank_delta": 3
+      "rank_delta": 1
+    },
+    {
+      "state": "Nagaland",
+      "sahaaya_score": 55.33,
+      "sahaaya_rank": 6,
+      "niti_mpi_pct": 15.43,
+      "niti_mpi_rank": 9,
+      "rank_delta": -3
     },
     {
       "state": "West Bengal",
-      "sahaaya_score": 48.59,
-      "sahaaya_rank": 8,
+      "sahaaya_score": 55.01,
+      "sahaaya_rank": 7,
       "niti_mpi_pct": 11.89,
       "niti_mpi_rank": 12,
+      "rank_delta": -5
+    },
+    {
+      "state": "Assam",
+      "sahaaya_score": 54.14,
+      "sahaaya_rank": 8,
+      "niti_mpi_pct": 19.35,
+      "niti_mpi_rank": 6,
+      "rank_delta": 2
+    },
+    {
+      "state": "Madhya Pradesh",
+      "sahaaya_score": 50.99,
+      "sahaaya_rank": 9,
+      "niti_mpi_pct": 20.63,
+      "niti_mpi_rank": 5,
+      "rank_delta": 4
+    },
+    {
+      "state": "Manipur",
+      "sahaaya_score": 46.38,
+      "sahaaya_rank": 10,
+      "niti_mpi_pct": 7.39,
+      "niti_mpi_rank": 18,
+      "rank_delta": -8
+    },
+    {
+      "state": "Arunachal Pradesh",
+      "sahaaya_score": 46.28,
+      "sahaaya_rank": 11,
+      "niti_mpi_pct": 11.23,
+      "niti_mpi_rank": 14,
+      "rank_delta": -3
+    },
+    {
+      "state": "Maharashtra",
+      "sahaaya_score": 45.76,
+      "sahaaya_rank": 12,
+      "niti_mpi_pct": 7.81,
+      "niti_mpi_rank": 16,
       "rank_delta": -4
     },
     {
       "state": "Gujarat",
-      "sahaaya_score": 46.46,
-      "sahaaya_rank": 9,
+      "sahaaya_score": 45.67,
+      "sahaaya_rank": 13,
       "niti_mpi_pct": 11.66,
       "niti_mpi_rank": 13,
-      "rank_delta": -4
-    },
-    {
-      "state": "Madhya Pradesh",
-      "sahaaya_score": 45.55,
-      "sahaaya_rank": 10,
-      "niti_mpi_pct": 20.63,
-      "niti_mpi_rank": 5,
-      "rank_delta": 5
-    },
-    {
-      "state": "Maharashtra",
-      "sahaaya_score": 42.98,
-      "sahaaya_rank": 11,
-      "niti_mpi_pct": 7.81,
-      "niti_mpi_rank": 16,
-      "rank_delta": -5
-    },
-    {
-      "state": "Telangana",
-      "sahaaya_score": 42.01,
-      "sahaaya_rank": 12,
-      "niti_mpi_pct": 5.88,
-      "niti_mpi_rank": 22,
-      "rank_delta": -10
-    },
-    {
-      "state": "Chhattisgarh",
-      "sahaaya_score": 41.69,
-      "sahaaya_rank": 13,
-      "niti_mpi_pct": 16.37,
-      "niti_mpi_rank": 7,
-      "rank_delta": 6
-    },
-    {
-      "state": "Arunachal Pradesh",
-      "sahaaya_score": 41.06,
-      "sahaaya_rank": 14,
-      "niti_mpi_pct": 11.23,
-      "niti_mpi_rank": 14,
       "rank_delta": 0
     },
     {
-      "state": "Rajasthan",
-      "sahaaya_score": 39.98,
-      "sahaaya_rank": 15,
-      "niti_mpi_pct": 15.31,
-      "niti_mpi_rank": 10,
-      "rank_delta": 5
+      "state": "Telangana",
+      "sahaaya_score": 43.39,
+      "sahaaya_rank": 14,
+      "niti_mpi_pct": 5.88,
+      "niti_mpi_rank": 22,
+      "rank_delta": -8
     },
     {
-      "state": "Manipur",
-      "sahaaya_score": 39.26,
-      "sahaaya_rank": 16,
-      "niti_mpi_pct": 7.39,
-      "niti_mpi_rank": 18,
-      "rank_delta": -2
+      "state": "Chhattisgarh",
+      "sahaaya_score": 42.71,
+      "sahaaya_rank": 15,
+      "niti_mpi_pct": 16.37,
+      "niti_mpi_rank": 7,
+      "rank_delta": 8
     },
     {
       "state": "Odisha",
-      "sahaaya_score": 37.25,
-      "sahaaya_rank": 17,
+      "sahaaya_score": 42.41,
+      "sahaaya_rank": 16,
       "niti_mpi_pct": 15.68,
       "niti_mpi_rank": 8,
-      "rank_delta": 9
+      "rank_delta": 8
     },
     {
       "state": "Karnataka",
-      "sahaaya_score": 36.88,
-      "sahaaya_rank": 18,
+      "sahaaya_score": 42.21,
+      "sahaaya_rank": 17,
       "niti_mpi_pct": 7.58,
       "niti_mpi_rank": 17,
-      "rank_delta": 1
+      "rank_delta": 0
     },
     {
-      "state": "Dadra and Nagar Haveli and Daman and Diu",
-      "sahaaya_score": 36.23,
+      "state": "Jammu and Kashmir",
+      "sahaaya_score": 40.44,
+      "sahaaya_rank": 18,
+      "niti_mpi_pct": 4.8,
+      "niti_mpi_rank": 25,
+      "rank_delta": -7
+    },
+    {
+      "state": "Rajasthan",
+      "sahaaya_score": 40.03,
       "sahaaya_rank": 19,
-      "niti_mpi_pct": 6.84,
-      "niti_mpi_rank": 20,
-      "rank_delta": -1
+      "niti_mpi_pct": 15.31,
+      "niti_mpi_rank": 10,
+      "rank_delta": 9
     },
     {
       "state": "Mizoram",
-      "sahaaya_score": 34.31,
+      "sahaaya_score": 38.41,
       "sahaaya_rank": 20,
       "niti_mpi_pct": 5.3,
       "niti_mpi_rank": 23,
       "rank_delta": -3
     },
     {
-      "state": "Jammu and Kashmir",
-      "sahaaya_score": 32.52,
-      "sahaaya_rank": 21,
-      "niti_mpi_pct": 4.8,
-      "niti_mpi_rank": 25,
-      "rank_delta": -4
-    },
-    {
       "state": "Ladakh",
-      "sahaaya_score": 31.28,
-      "sahaaya_rank": 22,
+      "sahaaya_score": 37.7,
+      "sahaaya_rank": 21,
       "niti_mpi_pct": 3.53,
       "niti_mpi_rank": 27,
-      "rank_delta": -5
+      "rank_delta": -6
     },
     {
-      "state": "Andhra Pradesh",
-      "sahaaya_score": 29.17,
-      "sahaaya_rank": 23,
-      "niti_mpi_pct": 6.06,
-      "niti_mpi_rank": 21,
+      "state": "Dadra and Nagar Haveli and Daman and Diu",
+      "sahaaya_score": 35.96,
+      "sahaaya_rank": 22,
+      "niti_mpi_pct": 6.84,
+      "niti_mpi_rank": 20,
       "rank_delta": 2
     },
     {
       "state": "Delhi",
-      "sahaaya_score": 29.11,
-      "sahaaya_rank": 24,
+      "sahaaya_score": 31.85,
+      "sahaaya_rank": 23,
       "niti_mpi_pct": 2.25,
       "niti_mpi_rank": 31,
-      "rank_delta": -7
+      "rank_delta": -8
     },
     {
-      "state": "Uttarakhand",
-      "sahaaya_score": 28.0,
+      "state": "Himachal Pradesh",
+      "sahaaya_score": 31.26,
+      "sahaaya_rank": 24,
+      "niti_mpi_pct": 4.93,
+      "niti_mpi_rank": 24,
+      "rank_delta": 0
+    },
+    {
+      "state": "Andaman and Nicobar Islands",
+      "sahaaya_score": 30.05,
       "sahaaya_rank": 25,
-      "niti_mpi_pct": 9.67,
-      "niti_mpi_rank": 15,
-      "rank_delta": 10
+      "niti_mpi_pct": 2.3,
+      "niti_mpi_rank": 30,
+      "rank_delta": -5
     },
     {
       "state": "Haryana",
-      "sahaaya_score": 25.53,
+      "sahaaya_score": 29.81,
       "sahaaya_rank": 26,
       "niti_mpi_pct": 7.07,
       "niti_mpi_rank": 19,
       "rank_delta": 7
     },
     {
-      "state": "Himachal Pradesh",
-      "sahaaya_score": 25.39,
+      "state": "Uttarakhand",
+      "sahaaya_score": 29.51,
       "sahaaya_rank": 27,
-      "niti_mpi_pct": 4.93,
-      "niti_mpi_rank": 24,
-      "rank_delta": 3
+      "niti_mpi_pct": 9.67,
+      "niti_mpi_rank": 15,
+      "rank_delta": 12
+    },
+    {
+      "state": "Andhra Pradesh",
+      "sahaaya_score": 29.02,
+      "sahaaya_rank": 28,
+      "niti_mpi_pct": 6.06,
+      "niti_mpi_rank": 21,
+      "rank_delta": 7
     },
     {
       "state": "Sikkim",
-      "sahaaya_score": 22.55,
-      "sahaaya_rank": 28,
+      "sahaaya_score": 27.05,
+      "sahaaya_rank": 29,
       "niti_mpi_pct": 2.6,
       "niti_mpi_rank": 29,
-      "rank_delta": -1
-    },
-    {
-      "state": "Andaman and Nicobar Islands",
-      "sahaaya_score": 21.86,
-      "sahaaya_rank": 29,
-      "niti_mpi_pct": 2.3,
-      "niti_mpi_rank": 30,
-      "rank_delta": -1
+      "rank_delta": 0
     },
     {
       "state": "Punjab",
-      "sahaaya_score": 21.28,
+      "sahaaya_score": 25.93,
       "sahaaya_rank": 30,
       "niti_mpi_pct": 4.75,
       "niti_mpi_rank": 26,
@@ -249,47 +249,47 @@
     },
     {
       "state": "Tamil Nadu",
-      "sahaaya_score": 18.93,
+      "sahaaya_score": 21.49,
       "sahaaya_rank": 31,
       "niti_mpi_pct": 2.2,
       "niti_mpi_rank": 32,
       "rank_delta": -1
     },
     {
-      "state": "Lakshadweep",
-      "sahaaya_score": 17.05,
+      "state": "Chandigarh",
+      "sahaaya_score": 20.3,
       "sahaaya_rank": 32,
-      "niti_mpi_pct": 0.37,
-      "niti_mpi_rank": 36,
-      "rank_delta": -4
+      "niti_mpi_pct": 2.62,
+      "niti_mpi_rank": 28,
+      "rank_delta": 4
     },
     {
       "state": "Goa",
-      "sahaaya_score": 16.61,
+      "sahaaya_score": 20.1,
       "sahaaya_rank": 33,
       "niti_mpi_pct": 0.84,
       "niti_mpi_rank": 34,
       "rank_delta": -1
     },
     {
-      "state": "Chandigarh",
-      "sahaaya_score": 15.37,
-      "sahaaya_rank": 34,
-      "niti_mpi_pct": 2.62,
-      "niti_mpi_rank": 28,
-      "rank_delta": 6
-    },
-    {
       "state": "Puducherry",
-      "sahaaya_score": 15.37,
+      "sahaaya_score": 19.57,
       "sahaaya_rank": 34,
       "niti_mpi_pct": 0.85,
       "niti_mpi_rank": 33,
       "rank_delta": 1
     },
     {
+      "state": "Lakshadweep",
+      "sahaaya_score": 17.25,
+      "sahaaya_rank": 35,
+      "niti_mpi_pct": 0.37,
+      "niti_mpi_rank": 36,
+      "rank_delta": -1
+    },
+    {
       "state": "Kerala",
-      "sahaaya_score": 11.21,
+      "sahaaya_score": 13.57,
       "sahaaya_rank": 36,
       "niti_mpi_pct": 0.55,
       "niti_mpi_rank": 35,

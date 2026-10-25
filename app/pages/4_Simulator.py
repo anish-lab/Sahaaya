@@ -60,7 +60,7 @@ render_sidebar_masthead(get_data_status())
 render_masthead(
     folio_code="DECISION-SUPPORT LAB · COUNTERFACTUAL POLICY SIMULATOR · MODEL ESTIMATES",
     title="Intervention & Counterfactual Scenario Simulator",
-    deck="Simulate targeted social and infrastructural investments (e.g., universal school amenities, pupil-teacher ratio optimization, maternal healthcare expansion) and evaluate estimated counterfactual shifts in composite district vulnerability.",
+    deck="Simulate targeted social and infrastructural investments (e.g., universal school amenities, pupil-teacher ratio optimization, maternal healthcare expansion) and evaluate estimated counterfactual shifts in composite state vulnerability.",
     location_tag="MODEL-BASED WHAT-IF · NON-CAUSAL ACCOUNTING · ±1.8 PTS CI",
 )
 
@@ -94,7 +94,6 @@ with st.expander("Mathematical Recomputation Formula & Uncertainty Accounting"):
            $$D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i)$$
         3. **Dynamic Renormalized Index**:
            $$V_{\text{sim}} = \frac{\sum_{k \in K_{\text{obs}}} w_k D_k}{\sum_{k \in K_{\text{obs}}} w_k} \quad \text{with 95% Confidence Band: } [V_{\text{sim}} - 1.8, \; V_{\text{sim}} + 1.8]$$
-        When employment telemetry is N/A, weights dynamically renormalize equally across the 3 observed pillars ($w_k = 1/3$).
         """
     )
 
@@ -127,7 +126,7 @@ if not districts:
 
 col_s1, col_s2 = st.columns([2.5, 1])
 with col_s1:
-    district = st.selectbox("Target Jurisdiction for Simulation", districts, index=0)
+    district = st.selectbox("Target State / Union Territory for Simulation", districts, index=0)
 with col_s2:
     period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Current Administrative Audit"
     st.selectbox("Base Reporting Period", [period_str], disabled=True)
@@ -144,7 +143,7 @@ baseline = row.iloc[0]
 # ---------------------------------------------------------------------------
 standard_cols = {
     "district_id", "district_name", "state", "period", "year",
-    "edu_risk", "health_risk", "emp_risk", "infra_risk",
+    "edu_risk", "health_risk", "infra_risk",
     "overall_score", "risk_band", "data_completeness",
     "cluster", "anomaly_flag", "anomaly_score", "pred_next_score",
 }
@@ -351,7 +350,6 @@ if simulate_clicked or True:  # Real-time evaluation with execution state
         scen_scores_dict = {
             "edu_risk": modified.get("edu_risk"),
             "health_risk": modified.get("health_risk"),
-            "emp_risk": modified.get("emp_risk"),
             "infra_risk": modified.get("infra_risk"),
             "overall_score": modified[dim_cols].mean() if dim_cols else None,
         }
@@ -414,7 +412,6 @@ if simulate_clicked or True:  # Real-time evaluation with execution state
         ("Overall Composite Vulnerability", "overall_score"),
         ("Education Vulnerability", "edu_risk"),
         ("Healthcare Deficit", "health_risk"),
-        ("Employment Deficit", "emp_risk"),
         ("Civic Infrastructure", "infra_risk"),
     ]
 

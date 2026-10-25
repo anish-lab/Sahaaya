@@ -57,7 +57,7 @@ render_sidebar_masthead(get_data_status())
 
 render_masthead(
     folio_code="ANALYTICAL MEMORANDUM · STATISTICAL TYPOLOGIES · PARTITION MODEL",
-    title="Socio-Economic Risk Archetypes & Cluster Profiles",
+    title="Socio-Economic Risk Archetypes & State Profiles",
     deck="Unsupervised partition modeling (K-Means with Silhouette Optimization) segmenting 36 States and UTs into structurally homogenous peer cohorts to support tailored policy interventions and peer benchmarking.",
     location_tag="UNSUPERVISED PARTITION ANALYSIS · OPTIMAL K=3",
 )
@@ -253,14 +253,14 @@ with col_pca:
                 coords, columns=[f"PC{i+1}" for i in range(n_components)], index=view.index
             )
             scatter_df["Cluster"] = "Archetype " + view["cluster"].astype(str)
-            scatter_df["Jurisdiction"] = view["district_name"].values
+            scatter_df["State / UT"] = view["district_name"].values
 
             fig_scatter = px.scatter(
                 scatter_df,
                 x="PC1",
                 y="PC2" if n_components >= 2 else "PC1",
                 color="Cluster",
-                hover_name="Jurisdiction",
+                hover_name="State / UT",
                 hover_data={"Cluster": True, "PC1": ":.2f", "PC2": ":.2f"},
                 color_discrete_sequence=["#14241D", "#BA6835", "#827845", "#385E48"],
             )

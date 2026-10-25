@@ -32,7 +32,6 @@ GEO_NAME_KEY: str = "properties.district"
 SUB_COLS: dict[str, str] = {
     "Education": "edu_risk",
     "Health": "health_risk",
-    "Employment": "emp_risk",
     "Infrastructure": "infra_risk",
 }
 
@@ -133,7 +132,7 @@ def is_mock_data(df: pd.DataFrame) -> bool:
         # Check that the non-standard columns are exactly the mock set
         indicator_cols = set(df.columns) - {
             "district_id", "district_name", "state", "year", "period",
-            "edu_risk", "health_risk", "emp_risk", "infra_risk",
+            "edu_risk", "health_risk", "infra_risk",
             "overall_score", "risk_band", "data_completeness",
             "cluster", "anomaly_flag", "anomaly_score",
             "pred_next_score",

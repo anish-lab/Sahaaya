@@ -70,7 +70,7 @@ df = load_features()
 
 if df is None:
     st.error("Telemetry store `features.parquet` not located. Please execute the ingestion pipeline.")
-    st.info("Run `python src/pipeline.py` to compile district feature sets.")
+    st.info("Run `python src/pipeline.py` to compile state feature sets.")
     st.stop()
 
 if is_mock_data(df):
@@ -114,7 +114,7 @@ if metric_col not in view.columns:
 # ---------------------------------------------------------------------------
 # Dynamic Analytical Lede (Findings Statement)
 # ---------------------------------------------------------------------------
-n_districts = view["district_name"].nunique()
+n_states = view["district_name"].nunique()
 avg_score = view[metric_col].mean()
 n_crit = int((view["risk_band"] == "Critical").sum()) if "risk_band" in view.columns else 0
 n_high = int((view["risk_band"] == "High").sum()) if "risk_band" in view.columns else 0
@@ -125,7 +125,7 @@ top_stressed = top_row["district_name"]
 top_score = top_row[metric_col]
 
 lede_msg = (
-    f"Across {n_districts} audited States & Union Territories, {high_crit} jurisdictions sit in the elevated "
+    f"Across {n_states} audited States & Union Territories, {high_crit} jurisdictions sit in the elevated "
     f"risk tiers ({n_crit} Critical, {n_high} High). Stress in {metric_label.lower()} is most acutely concentrated "
     f"in {top_stressed} (index score {top_score:.1f} / 100), against a national benchmark average of {avg_score:.1f}."
 )
@@ -241,7 +241,7 @@ with col_map:
             color=metric_col,
             color_continuous_scale=MAP_COLORSCALE,
             range_color=(0, 100),
-            labels={metric_col: "Index", "district_name": "District"},
+            labels={metric_col: "Index", "district_name": "State / UT"},
         )
         style_editorial_figure(
             fig_bar,
@@ -262,7 +262,7 @@ with col_tables:
         .head(10)[display_cols]
         .copy()
     )
-    rename = {"district_name": "Jurisdiction", metric_col: "Index"}
+    rename = {"district_name": "State / UT", metric_col: "Index"}
     if "risk_band" in top.columns:
         rename["risk_band"] = "Risk Band"
     top.rename(columns=rename, inplace=True)
@@ -532,10 +532,10 @@ with st.expander("Methodological Limitations, Missing Data Policy & Data Governa
         )
     with lim_col2:
         st.markdown(
-            "##### 3. Missing Data Policy & Dynamic Renormalization\n"
-            "Rural employment telemetry (`emp_risk`) is currently N/A for the national 36-state dataset (available in full for the "
-            "Tamil Nadu 38-district pilot). Missing dimensions are handled via **Dynamic Dimension Renormalization**: "
-            "no zero or mean imputation is performed; the index arithmetic mean scales over observed pillars ($w_d = 1/3$).\n\n"
+            "##### 3. Three Core Pillars (100% Complete Telemetry)\n"
+            "SAHAAYA evaluates social vulnerability across three verified statutory pillars: Education (UDISE+), Healthcare & Nutrition (NFHS-5), "
+            "and Civic Infrastructure (UDISE+). With employment telemetry excluded due to missing national datasets, all 3 active dimensions "
+            "are 100% complete across all 36 States and Union Territories with zero imputation required.\n\n"
             "##### 4. Model-Based Accounting (Non-Causal Simulator)\n"
             "The counterfactual simulator applies linear sensitivity accounting through the normative index framework. "
             "It does not represent an econometrically identified causal treatment model (e.g. RCT, DiD)."
@@ -556,7 +556,7 @@ with st.expander("Methodological Notes & Ingestion Provenance"):
     with c2:
         standard = {
             "district_id", "district_name", "state", "period", "year",
-            "edu_risk", "health_risk", "emp_risk", "infra_risk",
+            "edu_risk", "health_risk", "infra_risk",
             "overall_score", "risk_band", "data_completeness",
             "cluster", "anomaly_flag", "anomaly_score", "pred_next_score",
         }

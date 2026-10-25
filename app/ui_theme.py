@@ -792,7 +792,7 @@ def render_sidebar_masthead(data_status: dict) -> None:
 
         with st.expander("Observatory Pipeline Status", expanded=False):
             items = [
-                ("District Feature Store", data_status.get("features", False)),
+                ("State Feature Store", data_status.get("features", False)),
                 ("Cluster Typologies", data_status.get("clusters", False)),
                 ("Isolation Forest Anomaly", data_status.get("anomalies", False)),
                 ("Survey Boundaries (GeoJSON)", data_status.get("geojson", False)),
