@@ -508,11 +508,11 @@ with col_bench_note:
         ),
     )
     st.markdown(
-        "<div style='font-family:"IBM Plex Mono", monospace; font-size:0.72rem; color:#444A43; line-height:1.5; padding:8px 0; border-top:1px solid #E2DED4; margin-top:8px;'>"
-        "<b>Weight Robustness:</b><br>"
-        "Monte Carlo perturbation (+/- 30% weights) proves the Top-10 vulnerable list is <b>93.6% stable</b>. "
-        "Equal weights correlate at <b>rho = 0.999</b> with an unsupervised PCA-derived index."
-        "</div>",
+        """<div style="font-family:'IBM Plex Mono', monospace; font-size:0.72rem; color:#444A43; line-height:1.5; padding:8px 0; border-top:1px solid #E2DED4; margin-top:8px;">
+        <b>Weight Robustness:</b><br>
+        Monte Carlo perturbation (+/- 30% weights) proves the Top-10 vulnerable list is <b>93.6% stable</b>.
+        Equal weights correlate at <b>rho = 0.999</b> with an unsupervised PCA-derived index.
+        </div>""",
         unsafe_allow_html=True,
     )
 
