@@ -19,7 +19,9 @@ FEATURES_PATH: Path = ROOT / "data" / "processed" / "features.parquet"
 CLUSTERS_PATH: Path = ROOT / "data" / "processed" / "cluster_assignments.parquet"
 PROFILES_PATH: Path = ROOT / "data" / "processed" / "cluster_profiles.parquet"
 ANOMALIES_PATH: Path = ROOT / "data" / "processed" / "anomaly_results.parquet"
-GEOJSON_PATH: Path = ROOT / "data" / "processed" / "tn_districts.geojson"
+INDIA_GEOJSON_PATH: Path = ROOT / "data" / "processed" / "india_states.geojson"
+TN_GEOJSON_PATH: Path = ROOT / "data" / "processed" / "tn_districts.geojson"
+GEOJSON_PATH: Path = INDIA_GEOJSON_PATH if INDIA_GEOJSON_PATH.exists() else TN_GEOJSON_PATH
 
 # Configurable: the key in GeoJSON feature properties that holds the district name
 GEO_NAME_KEY: str = "properties.district"

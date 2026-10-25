@@ -10,7 +10,6 @@ Outputs:
     - reports/model_evaluation_report.md  (via save_model_report)
 """
 
-from __future__ import annotations
 
 import sys
 from datetime import datetime

@@ -1,0 +1,66 @@
+{
+  "methodology": "K-Means on Standardized Indicators (Zero Mean, Unit Variance)",
+  "sample_size": 36,
+  "features_used": [
+    "schools_with_electricity_pct",
+    "schools_with_drinking_water_pct",
+    "schools_with_toilets_pct",
+    "schools_with_internet_pct",
+    "schools_with_computers_pct",
+    "enrolment",
+    "pupil_teacher_ratio",
+    "stunting_pct",
+    "wasting_pct",
+    "institutional_births_pct",
+    "health_insurance_pct",
+    "schooling_10plus_pct",
+    "edu_risk",
+    "health_risk",
+    "infra_risk",
+    "overall_score"
+  ],
+  "k_evaluation": [
+    {
+      "k": 2,
+      "inertia": 401.48,
+      "silhouette": 0.2633
+    },
+    {
+      "k": 3,
+      "inertia": 292.81,
+      "silhouette": 0.2903
+    },
+    {
+      "k": 4,
+      "inertia": 243.51,
+      "silhouette": 0.2658
+    },
+    {
+      "k": 5,
+      "inertia": 211.39,
+      "silhouette": 0.213
+    },
+    {
+      "k": 6,
+      "inertia": 185.68,
+      "silhouette": 0.1997
+    },
+    {
+      "k": 7,
+      "inertia": 166.29,
+      "silhouette": 0.1917
+    },
+    {
+      "k": 8,
+      "inertia": 150.8,
+      "silhouette": 0.1705
+    }
+  ],
+  "chosen_k": 4,
+  "elbow_analysis": "Inertia curve exhibits noticeable deceleration (elbow) around k=3 to k=4.",
+  "seed_stability_50_runs": {
+    "evaluated_k": 4,
+    "mean_adjusted_rand_index": 0.8376,
+    "interpretation": "High cluster stability across random initializations (Mean ARI = 0.838 >= 0.80)."
+  }
+}

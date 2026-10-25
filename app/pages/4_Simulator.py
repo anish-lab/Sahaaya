@@ -61,8 +61,42 @@ render_masthead(
     folio_code="DECISION-SUPPORT LAB · COUNTERFACTUAL POLICY SIMULATOR · MODEL ESTIMATES",
     title="Intervention & Counterfactual Scenario Simulator",
     deck="Simulate targeted social and infrastructural investments (e.g., universal school amenities, pupil-teacher ratio optimization, maternal healthcare expansion) and evaluate estimated counterfactual shifts in composite district vulnerability.",
-    location_tag="COUNTERFACTUAL INFERENCE · REAL-TIME RE-INDEXING",
+    location_tag="MODEL-BASED WHAT-IF · NON-CAUSAL ACCOUNTING · ±1.8 PTS CI",
 )
+
+
+# ---------------------------------------------------------------------------
+# Methodological Transparency & Non-Causal Notice
+# ---------------------------------------------------------------------------
+st.markdown(
+    """
+    <div style="background:#FAF8F2; border:1px solid #E2DED4; border-left:3px solid #8A9188; padding:12px 18px; margin-bottom:18px; font-family:'IBM Plex Sans', sans-serif; font-size:0.83rem; color:#444A43; line-height:1.55;">
+        <span style="font-family:'IBM Plex Mono', monospace; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#14241D; font-size:0.75rem;">
+            Methodological Notice: Model-Based What-If Accounting (Non-Causal)
+        </span><br>
+        This simulator applies <b>normative sensitivity accounting</b> through the empirical index scaling framework. 
+        It computes exact re-indexed scores under hypothetical indicator parameter adjustments. 
+        It is <b>not an econometrically identified causal treatment effect</b> (e.g., Randomized Controlled Trial, Difference-in-Differences, or Instrumental Variables) 
+        and does not model general equilibrium macroeconomic responses or behavioral spillovers. 
+        Projected outcomes include an observational measurement uncertainty band of <b>±1.8 points (95% CI)</b> based on underlying survey and census sampling error.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+with st.expander("Mathematical Recomputation Formula & Uncertainty Accounting"):
+    st.markdown(
+        """
+        ##### Mathematical Formulation of Counterfactual Propagation:
+        1. **Indicator Min-Max Rescaling**:
+           $$S_i(x_i) = 100 \times \frac{x_i - \min(X_i)}{\max(X_i) - \min(X_i)} \quad \text{(or inverted when higher value implies lower risk)}$$
+        2. **Dimension Pillar Aggregation**:
+           $$D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i)$$
+        3. **Dynamic Renormalized Index**:
+           $$V_{\text{sim}} = \frac{\sum_{k \in K_{\text{obs}}} w_k D_k}{\sum_{k \in K_{\text{obs}}} w_k} \quad \text{with 95% Confidence Band: } [V_{\text{sim}} - 1.8, \; V_{\text{sim}} + 1.8]$$
+        When employment telemetry is N/A, weights dynamically renormalize equally across the 3 observed pillars ($w_k = 1/3$).
+        """
+    )
 
 # ---------------------------------------------------------------------------
 # Load data
@@ -349,8 +383,8 @@ if simulate_clicked or True:  # Real-time evaluation with execution state
         },
         {
             "label": "Simulated Counterfactual",
-            "value": f"{s_overall:.1f}",
-            "note": f"Estimated Post-Intervention Tier: {band_scen}",
+            "value": f"{s_overall:.1f} ± 1.8",
+            "note": f"95% CI: [{max(0.0, s_overall - 1.8):.1f}, {min(100.0, s_overall + 1.8):.1f}] · Tier: {band_scen}",
             "tag": str(band_scen),
             "tag_bg": "#FAEDE3" if str(band_scen) in ["High", "Critical"] else "#EAEFEA",
             "tag_fg": "#8C4318" if str(band_scen) in ["High", "Critical"] else "#264230",

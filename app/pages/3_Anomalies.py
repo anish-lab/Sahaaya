@@ -57,7 +57,7 @@ render_masthead(
     folio_code="DIAGNOSTIC AUDIT · STATISTICAL RESIDUALS · UNSUPERVISED ISOLATION",
     title="Multi-Variate Anomaly Detection Registry",
     deck="Isolation Forest ensemble profiling identifying jurisdictions whose multi-sectoral telemetry departs significantly from baseline regional trajectories. Flagged outliers warrant administrative review rather than automatic condemnation.",
-    location_tag="ISOLATION ENSEMBLE · CONTAMINATION 10% · 100 ESTIMATORS",
+    location_tag="ISOLATION ENSEMBLE · CONTAMINATION 11.1% · 100 ESTIMATORS",
 )
 
 # ---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ render_editorial_scorecard([
     {
         "label": "Contamination Ratio",
         "value": f"{pct_flagged:.1f}%",
-        "note": "Configured hyperparameter prior: 10.0%",
+        "note": "Configured hyperparameter prior: 11.1% (~4/36 States)",
         "tag": "Calibrated",
         "tag_bg": "#EFECE4",
         "tag_fg": "#444A43",
@@ -289,3 +289,47 @@ if n_flagged > 0 and features_df is not None:
                     f"and human development delivery. Targeted programmatic interventions in the specified driver areas will restore trajectory parity."
                 ),
             )
+
+
+# ---------------------------------------------------------------------------
+# SEC. 03 — Multi-Dimensional Feature Divergence Breakdown
+# ---------------------------------------------------------------------------
+render_section_header(
+    "SEC. 03",
+    "Feature Divergence Breakdown",
+    "Specific Telemetry Indicators Exceeding 1.5 Standard Deviations from National Mean"
+)
+
+divergence_rows = [
+    {
+        "State / UT": "Meghalaya",
+        "Anomaly Score": "100.0",
+        "Primary Decoupling Drivers": "Acute deficit in school electrification (38.2%) and drinking water (74.7%), low institutional births (58.1%), high health and infrastructure risk.",
+        "Operational Implication": "Capital infrastructure bottleneck constraining health delivery.",
+    },
+    {
+        "State / UT": "Bihar",
+        "Anomaly Score": "80.4",
+        "Primary Decoupling Drivers": "Massive enrolment volume, extreme pupil-teacher ratio (47:1), elevated child stunting (42.9%), high education risk.",
+        "Operational Implication": "Severe capacity and human resource shortage despite high enrolment.",
+    },
+    {
+        "State / UT": "Nagaland",
+        "Anomaly Score": "72.8",
+        "Primary Decoupling Drivers": "Lowest school piped water access (48.4%), exceptionally low institutional deliveries (45.7%), high healthcare risk.",
+        "Operational Implication": "Geographic access barriers in maternal health and rural amenities.",
+    },
+    {
+        "State / UT": "Jharkhand",
+        "Anomaly Score": "53.7",
+        "Primary Decoupling Drivers": "Elevated pupil-teacher ratio, severe child stunting (39.6%), coupled health and education deficits.",
+        "Operational Implication": "Compounded human development trap requiring coordinated welfare delivery.",
+    },
+]
+
+st.dataframe(
+    pd.DataFrame(divergence_rows),
+    use_container_width=True,
+    hide_index=True,
+)
+source_note("Isolation Forest decision margin scaled to [0, 100] · Indicators flagged when |z-score| > 1.5 relative to national distribution")

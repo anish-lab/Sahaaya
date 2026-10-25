@@ -192,7 +192,11 @@ render_editorial_scorecard([
     {
         "label": "Employment Deficit",
         "value": _fmt(latest.get("emp_risk")),
-        "note": "Safety net & wage guarantees",
+        "note": "State API Pending (Renormalized 33.3%)" if pd.isna(latest.get("emp_risk")) else "Safety net & wage guarantees",
+        "tag": "Renormalized" if pd.isna(latest.get("emp_risk")) else None,
+        "tag_bg": "#EFECE4" if pd.isna(latest.get("emp_risk")) else None,
+        "tag_fg": "#444A43" if pd.isna(latest.get("emp_risk")) else None,
+        "tag_border": "#D5D0C5" if pd.isna(latest.get("emp_risk")) else None,
     },
     {
         "label": "Civic Infrastructure",
@@ -210,6 +214,18 @@ render_editorial_scorecard([
     },
 ])
 
+
+if pd.isna(latest.get("emp_risk")):
+    st.markdown(
+        """
+        <div style="background:#FAF8F2; border:1px solid #E2DED4; border-left:3px solid #8A9188; padding:8px 14px; margin-bottom:18px; font-family:'IBM Plex Sans', sans-serif; font-size:0.78rem; color:#444A43; line-height:1.45;">
+            <b>Missing Dimension Governance:</b> Rural employment telemetry (<code>emp_risk</code>) is currently pending centralized state-level MGNREGA API harmonization (fully active in the Tamil Nadu 38-district pilot). 
+            Under SAHAAYA's <b>Dynamic Dimension Renormalization</b> policy, missing dimensions are not imputed with synthetic zeros or national means; 
+            instead, the composite index arithmetic mean scales over the 3 observed pillars ($w_{\\text{edu}} = w_{\\text{health}} = w_{\\text{infra}} = 33.3\\%$).
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 # ---------------------------------------------------------------------------
 # Asymmetric Layout: Risk Breakdown vs. Typology & Anomaly Status
 # ---------------------------------------------------------------------------

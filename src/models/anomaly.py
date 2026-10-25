@@ -49,7 +49,7 @@ class AnomalyDetector:
     def __init__(
         self,
         features_path: Path | str,
-        contamination: float = 0.1,
+        contamination: float = 0.11,  # Tailored for the top decile of 36 States/UTs (~4 anomalies)
         random_state: int = 42,
     ) -> None:
         self.features_path = Path(features_path)
@@ -188,7 +188,7 @@ class AnomalyDetector:
         df.loc[valid_mask, "anomaly_score"] = scaled_scores
 
         # Save model ---------------------------------------------------
-        root = self.features_path.parents[1]
+        root = Path(self.features_path).resolve().parents[2] if len(Path(self.features_path).resolve().parents) >= 3 else Path(self.features_path).resolve().parents[0]
         models_dir = root / "models"
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(self.model, models_dir / "anomaly_model.pkl")
@@ -257,6 +257,33 @@ class AnomalyDetector:
 
         n_flagged = len(anomaly_idx)
         print(f"[AnomalyDetector] Explained {n_flagged} anomalies.")
+        
+        # Persist detailed anomaly diagnostics
+        try:
+            import json
+            root = Path(self.features_path).resolve().parents[2] if len(Path(self.features_path).resolve().parents) >= 3 else Path(self.features_path).resolve().parents[0]
+            out_dir = root / "data" / "metadata"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            diag_data = {
+                "methodology": "Isolation Forest on Standardized Multidimensional Indicators",
+                "contamination": self.contamination,
+                "contamination_rationale": "Configured at 0.11 (approx 4 of 36 jurisdictions) to isolate the top decile of multi-dimensional distributional deviations without over-flagging normative noise.",
+                "n_anomalies_detected": int(df["anomaly_flag"].sum()),
+                "flagged_states": []
+            }
+            anom_df = df[df["anomaly_flag"] == True].sort_values("anomaly_score", ascending=False)
+            for _, r in anom_df.iterrows():
+                diag_data["flagged_states"].append({
+                    "state": r["district_name"],
+                    "anomaly_score": round(float(r["anomaly_score"]), 2),
+                    "diverging_features": r["unusual_features"]
+                })
+            with open(out_dir / "anomaly_diagnostics.json", "w", encoding="utf-8") as f:
+                json.dump(diag_data, f, indent=2)
+            print(f"[AnomalyDetector] Saved anomaly diagnostics to {out_dir / 'anomaly_diagnostics.json'}")
+        except Exception as e:
+            print(f"[AnomalyDetector] Notice: could not persist anomaly diagnostics: {e}")
+
         return df
 
     # ------------------------------------------------------------------

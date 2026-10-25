@@ -1,0 +1,191 @@
+{
+  "indicators_audited": [
+    "schools_with_electricity_pct",
+    "schools_with_drinking_water_pct",
+    "schools_with_toilets_pct",
+    "schools_with_internet_pct",
+    "schools_with_computers_pct",
+    "pupil_teacher_ratio",
+    "stunting_pct",
+    "wasting_pct",
+    "institutional_births_pct",
+    "health_insurance_pct",
+    "schooling_10plus_pct"
+  ],
+  "collinear_threshold": 0.7,
+  "collinear_pairs": [
+    {
+      "indicator_1": "schools_with_electricity_pct",
+      "indicator_2": "schools_with_drinking_water_pct",
+      "pearson_r": 0.813,
+      "interpretation": "Strong collinearity indicates structural co-dependence. When applying predictive models, one of these indicators should be regularized or reduced via PCA/ridge regression to prevent variance inflation."
+    },
+    {
+      "indicator_1": "schools_with_electricity_pct",
+      "indicator_2": "schools_with_toilets_pct",
+      "pearson_r": 0.725,
+      "interpretation": "Strong collinearity indicates structural co-dependence. When applying predictive models, one of these indicators should be regularized or reduced via PCA/ridge regression to prevent variance inflation."
+    },
+    {
+      "indicator_1": "schools_with_drinking_water_pct",
+      "indicator_2": "institutional_births_pct",
+      "pearson_r": 0.762,
+      "interpretation": "Strong collinearity indicates structural co-dependence. When applying predictive models, one of these indicators should be regularized or reduced via PCA/ridge regression to prevent variance inflation."
+    },
+    {
+      "indicator_1": "schools_with_internet_pct",
+      "indicator_2": "schools_with_computers_pct",
+      "pearson_r": 0.822,
+      "interpretation": "Strong collinearity indicates structural co-dependence. When applying predictive models, one of these indicators should be regularized or reduced via PCA/ridge regression to prevent variance inflation."
+    }
+  ],
+  "correlation_matrix": {
+    "schools_with_electricity_pct": {
+      "schools_with_electricity_pct": 1.0,
+      "schools_with_drinking_water_pct": 0.813,
+      "schools_with_toilets_pct": 0.725,
+      "schools_with_internet_pct": 0.543,
+      "schools_with_computers_pct": 0.567,
+      "pupil_teacher_ratio": 0.183,
+      "stunting_pct": -0.319,
+      "wasting_pct": 0.108,
+      "institutional_births_pct": 0.655,
+      "health_insurance_pct": 0.03,
+      "schooling_10plus_pct": 0.442
+    },
+    "schools_with_drinking_water_pct": {
+      "schools_with_electricity_pct": 0.813,
+      "schools_with_drinking_water_pct": 1.0,
+      "schools_with_toilets_pct": 0.593,
+      "schools_with_internet_pct": 0.334,
+      "schools_with_computers_pct": 0.343,
+      "pupil_teacher_ratio": 0.207,
+      "stunting_pct": -0.324,
+      "wasting_pct": 0.095,
+      "institutional_births_pct": 0.762,
+      "health_insurance_pct": -0.091,
+      "schooling_10plus_pct": 0.297
+    },
+    "schools_with_toilets_pct": {
+      "schools_with_electricity_pct": 0.725,
+      "schools_with_drinking_water_pct": 0.593,
+      "schools_with_toilets_pct": 1.0,
+      "schools_with_internet_pct": 0.386,
+      "schools_with_computers_pct": 0.337,
+      "pupil_teacher_ratio": 0.303,
+      "stunting_pct": -0.084,
+      "wasting_pct": 0.281,
+      "institutional_births_pct": 0.593,
+      "health_insurance_pct": 0.121,
+      "schooling_10plus_pct": 0.26
+    },
+    "schools_with_internet_pct": {
+      "schools_with_electricity_pct": 0.543,
+      "schools_with_drinking_water_pct": 0.334,
+      "schools_with_toilets_pct": 0.386,
+      "schools_with_internet_pct": 1.0,
+      "schools_with_computers_pct": 0.822,
+      "pupil_teacher_ratio": 0.068,
+      "stunting_pct": -0.322,
+      "wasting_pct": -0.14,
+      "institutional_births_pct": 0.463,
+      "health_insurance_pct": 0.294,
+      "schooling_10plus_pct": 0.566
+    },
+    "schools_with_computers_pct": {
+      "schools_with_electricity_pct": 0.567,
+      "schools_with_drinking_water_pct": 0.343,
+      "schools_with_toilets_pct": 0.337,
+      "schools_with_internet_pct": 0.822,
+      "schools_with_computers_pct": 1.0,
+      "pupil_teacher_ratio": -0.046,
+      "stunting_pct": -0.436,
+      "wasting_pct": -0.29,
+      "institutional_births_pct": 0.495,
+      "health_insurance_pct": 0.002,
+      "schooling_10plus_pct": 0.604
+    },
+    "pupil_teacher_ratio": {
+      "schools_with_electricity_pct": 0.183,
+      "schools_with_drinking_water_pct": 0.207,
+      "schools_with_toilets_pct": 0.303,
+      "schools_with_internet_pct": 0.068,
+      "schools_with_computers_pct": -0.046,
+      "pupil_teacher_ratio": 1.0,
+      "stunting_pct": 0.578,
+      "wasting_pct": 0.457,
+      "institutional_births_pct": 0.039,
+      "health_insurance_pct": 0.069,
+      "schooling_10plus_pct": -0.311
+    },
+    "stunting_pct": {
+      "schools_with_electricity_pct": -0.319,
+      "schools_with_drinking_water_pct": -0.324,
+      "schools_with_toilets_pct": -0.084,
+      "schools_with_internet_pct": -0.322,
+      "schools_with_computers_pct": -0.436,
+      "pupil_teacher_ratio": 0.578,
+      "stunting_pct": 1.0,
+      "wasting_pct": 0.616,
+      "institutional_births_pct": -0.383,
+      "health_insurance_pct": 0.154,
+      "schooling_10plus_pct": -0.623
+    },
+    "wasting_pct": {
+      "schools_with_electricity_pct": 0.108,
+      "schools_with_drinking_water_pct": 0.095,
+      "schools_with_toilets_pct": 0.281,
+      "schools_with_internet_pct": -0.14,
+      "schools_with_computers_pct": -0.29,
+      "pupil_teacher_ratio": 0.457,
+      "stunting_pct": 0.616,
+      "wasting_pct": 1.0,
+      "institutional_births_pct": 0.027,
+      "health_insurance_pct": 0.067,
+      "schooling_10plus_pct": -0.431
+    },
+    "institutional_births_pct": {
+      "schools_with_electricity_pct": 0.655,
+      "schools_with_drinking_water_pct": 0.762,
+      "schools_with_toilets_pct": 0.593,
+      "schools_with_internet_pct": 0.463,
+      "schools_with_computers_pct": 0.495,
+      "pupil_teacher_ratio": 0.039,
+      "stunting_pct": -0.383,
+      "wasting_pct": 0.027,
+      "institutional_births_pct": 1.0,
+      "health_insurance_pct": 0.097,
+      "schooling_10plus_pct": 0.417
+    },
+    "health_insurance_pct": {
+      "schools_with_electricity_pct": 0.03,
+      "schools_with_drinking_water_pct": -0.091,
+      "schools_with_toilets_pct": 0.121,
+      "schools_with_internet_pct": 0.294,
+      "schools_with_computers_pct": 0.002,
+      "pupil_teacher_ratio": 0.069,
+      "stunting_pct": 0.154,
+      "wasting_pct": 0.067,
+      "institutional_births_pct": 0.097,
+      "health_insurance_pct": 1.0,
+      "schooling_10plus_pct": -0.056
+    },
+    "schooling_10plus_pct": {
+      "schools_with_electricity_pct": 0.442,
+      "schools_with_drinking_water_pct": 0.297,
+      "schools_with_toilets_pct": 0.26,
+      "schools_with_internet_pct": 0.566,
+      "schools_with_computers_pct": 0.604,
+      "pupil_teacher_ratio": -0.311,
+      "stunting_pct": -0.623,
+      "wasting_pct": -0.431,
+      "institutional_births_pct": 0.417,
+      "health_insurance_pct": -0.056,
+      "schooling_10plus_pct": 1.0
+    }
+  },
+  "leakage_protocol": {
+    "definition": "Target leakage occurs when features fed into a predictive model or SHAP explanation contain direct deterministic components of the target variable.",
+    "sahaaya_guardrail": "Because overall_score is a deterministic weighted linear combination of normalized indicators, regressing overall_score on these same 11 indicators yields a trivial identity with R^2 ~ 1.0, producing circular and uninformative SHAP explanations. In SAHAAYA: (1) Unsupervised clustering and Isolation Forest are trained on standardized indicators to discover intrinsic data geometry rather than predict overall_score. (2) Counterfactual simulation uses explicit linear index sensitivity accounting rather than an in-sample regression black box, ensuring 100% transparency with zero circular leakage."
+  }
+}
