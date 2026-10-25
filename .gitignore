@@ -38,6 +38,7 @@ data/interim/*
 # Metadata (regenerated)
 data/metadata/*
 !data/metadata/.gitkeep
+!data/metadata/*.json
 
 # Model artifacts
 models/*.pkl
@@ -50,6 +51,7 @@ data/models/*
 # Reports (generated)
 reports/*
 !reports/.gitkeep
+!reports/*.md
 
 # OS
 .DS_Store

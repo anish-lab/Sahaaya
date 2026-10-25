@@ -1,0 +1,53 @@
+{
+  "udise": [
+    {
+      "name": "UDISE_2020_21_Table_3.17.csv",
+      "path": "C:\\Anish\\ML Sahaaya\\data\\raw\\udise\\UDISE_2020_21_Table_3.17.csv",
+      "size_bytes": 26547,
+      "size_human": "25.9 KB",
+      "format": "csv",
+      "last_modified": "2026-10-24T11:00:05.220784+00:00",
+      "detected_encoding": "unknown (chardet not installed)"
+    },
+    {
+      "name": "UDISE_2022_23_Table_2.5_0.csv",
+      "path": "C:\\Anish\\ML Sahaaya\\data\\raw\\udise\\UDISE_2022_23_Table_2.5_0.csv",
+      "size_bytes": 6207,
+      "size_human": "6.1 KB",
+      "format": "csv",
+      "last_modified": "2026-10-24T10:56:01.311032+00:00",
+      "detected_encoding": "unknown (chardet not installed)"
+    },
+    {
+      "name": "UDISE_2022_23_Table_4.13.csv",
+      "path": "C:\\Anish\\ML Sahaaya\\data\\raw\\udise\\UDISE_2022_23_Table_4.13.csv",
+      "size_bytes": 9437,
+      "size_human": "9.2 KB",
+      "format": "csv",
+      "last_modified": "2026-10-24T11:02:17.482807+00:00",
+      "detected_encoding": "unknown (chardet not installed)"
+    }
+  ],
+  "nfhs": [
+    {
+      "name": "NFHS_5_India_Districts_Factsheet_Data.xls",
+      "path": "C:\\Anish\\ML Sahaaya\\data\\raw\\nfhs\\NFHS_5_India_Districts_Factsheet_Data.xls",
+      "size_bytes": 757248,
+      "size_human": "739.5 KB",
+      "format": "xls",
+      "last_modified": "2026-10-24T11:09:17.746733+00:00"
+    }
+  ],
+  "mgnrega": [],
+  "boundaries": [
+    {
+      "name": "india_states.geojson",
+      "path": "C:\\Anish\\ML Sahaaya\\data\\raw\\boundaries\\india_states.geojson",
+      "size_bytes": 13620981,
+      "size_human": "13.0 MB",
+      "format": "geojson",
+      "last_modified": "2026-10-24T11:11:38.138033+00:00"
+    }
+  ],
+  "additional": []
+}

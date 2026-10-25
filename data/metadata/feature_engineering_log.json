@@ -1,0 +1,12 @@
+{
+  "sources_used": [
+    "udise",
+    "nfhs"
+  ],
+  "dimensions_computed": [
+    "edu_risk",
+    "health_risk",
+    "infra_risk"
+  ],
+  "indicator_columns": []
+}
