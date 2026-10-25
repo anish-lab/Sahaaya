@@ -8,6 +8,7 @@ accents, editorial Newsreader serif typography, and restrained burnt-orange high
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 import plotly.express as px
 
@@ -281,6 +282,49 @@ def inject_custom_theme() -> None:
     [data-testid="stSidebar"] {
         background-color: var(--forest-deep) !important;
         border-right: 1px solid #233B2F !important;
+    }
+
+    /* Sidebar Content Flex Reordering: Promote SAHAAYA Brand Masthead above Navigation */
+    [data-testid="stSidebarContent"] {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    [data-testid="stSidebarHeader"] {
+        order: -20 !important;
+    }
+
+    [data-testid="stSidebarUserContent"] {
+        display: contents !important;
+    }
+
+    [data-testid="stSidebarUserContent"] > [data-testid="stElementContainer"]:has(.sidebar-masthead),
+    [data-testid="stSidebarUserContent"] > div:has(.sidebar-masthead),
+    [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.sidebar-masthead),
+    .sidebar-masthead {
+        order: -10 !important;
+    }
+
+    [data-testid="stSidebarNav"] {
+        order: 0 !important;
+        border-top: 1px solid #233B2F;
+        border-bottom: 1px solid #233B2F;
+        padding: 12px 0 !important;
+        margin: 12px 0 !important;
+    }
+
+    [data-testid="stSidebarUserContent"] > [data-testid="stElementContainer"]:has(.stExpander),
+    [data-testid="stSidebarUserContent"] > div:has(.stExpander),
+    [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.stExpander),
+    [data-testid="stSidebar"] .stExpander {
+        order: 10 !important;
+    }
+
+    [data-testid="stSidebarUserContent"] > [data-testid="stElementContainer"]:has(.sidebar-meta-panel),
+    [data-testid="stSidebarUserContent"] > div:has(.sidebar-meta-panel),
+    [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.sidebar-meta-panel),
+    .sidebar-meta-panel {
+        order: 20 !important;
     }
 
     [data-testid="stSidebar"] * {
@@ -702,7 +746,7 @@ def render_sidebar_masthead(data_status: dict) -> None:
     """Render the research observatory identity in the sidebar."""
     with st.sidebar:
         sidebar_top = (
-            '<div class="sidebar-masthead">'
+            '<div class="sidebar-masthead" id="sahaaya-sidebar-masthead">'
             '<div class="sidebar-logotype">SAHAAYA</div>'
             '<div class="sidebar-descriptor">National Civic Observatory</div>'
             '<div style="font-family:\'IBM Plex Sans\'; font-size:0.75rem; color:#8A9A8E; margin-top:6px; line-height:1.4;">'
@@ -714,6 +758,37 @@ def render_sidebar_masthead(data_status: dict) -> None:
             st.html(sidebar_top)
         else:
             st.markdown(sidebar_top, unsafe_allow_html=True)
+
+        js_pin = """
+        <script>
+        (function() {
+            function placeMastheadTop() {
+                try {
+                    var doc = window.parent.document;
+                    if (!doc) return;
+                    var masthead = doc.getElementById('sahaaya-sidebar-masthead') || doc.querySelector('.sidebar-masthead');
+                    var nav = doc.querySelector('[data-testid="stSidebarNav"]');
+                    if (masthead && nav && nav.parentNode) {
+                        var targetNode = masthead;
+                        while (targetNode.parentElement && 
+                               targetNode.parentElement !== nav.parentNode && 
+                               targetNode.parentElement.getAttribute('data-testid') !== 'stSidebarContent') {
+                            targetNode = targetNode.parentElement;
+                        }
+                        if (targetNode && targetNode.parentNode && targetNode.nextSibling !== nav) {
+                            targetNode.parentNode.insertBefore(targetNode, nav);
+                        }
+                    }
+                } catch(e) {}
+            }
+            placeMastheadTop();
+            var observer = new MutationObserver(placeMastheadTop);
+            observer.observe(window.parent.document.body, { childList: true, subtree: true });
+            setTimeout(function() { observer.disconnect(); }, 5000);
+        })();
+        </script>
+        """
+        components.html(js_pin, height=0, width=0)
 
         with st.expander("Observatory Pipeline Status", expanded=False):
             items = [
