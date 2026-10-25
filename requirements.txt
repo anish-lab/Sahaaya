@@ -25,3 +25,5 @@ pytest>=7.4
 
 # Utilities
 chardet>=5.0
+
+statsmodels>=0.14

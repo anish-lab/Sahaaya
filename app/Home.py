@@ -16,8 +16,10 @@ for p in [str(APP_DIR), str(ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
@@ -461,14 +463,32 @@ with col_bench_chart:
             color_discrete_map=BAND_COLORS,
             category_orders={"risk_band": BAND_ORDER},
             hover_name="district_name",
-            trendline="ols",
-            trendline_color_override="#14241D",
             labels={
                 "overall_score": "SAHAAYA Overall Vulnerability Score (0–100)",
                 "niti_mpi": "NITI Aayog MPI Headcount Ratio (% Deprived)",
                 "risk_band": "Risk Band",
             },
         )
+        # Add OLS regression trendline via numpy (zero statsmodels runtime dependency)
+        x_vals = pd.to_numeric(valid_bench["overall_score"], errors="coerce").values
+        y_vals = pd.to_numeric(valid_bench["niti_mpi"], errors="coerce").values
+        valid_mask = ~np.isnan(x_vals) & ~np.isnan(y_vals)
+        if valid_mask.sum() > 1:
+            x_fit = x_vals[valid_mask]
+            y_fit = y_vals[valid_mask]
+            slope, intercept = np.polyfit(x_fit, y_fit, 1)
+            x_line = np.linspace(float(x_fit.min()), float(x_fit.max()), 50)
+            y_line = slope * x_line + intercept
+            fig_bench.add_trace(
+                go.Scatter(
+                    x=x_line,
+                    y=y_line,
+                    mode="lines",
+                    name="OLS Linear Trendline",
+                    line=dict(color="#14241D", width=1.5, dash="dot"),
+                    hoverinfo="skip",
+                )
+            )
         fig_bench.update_traces(
             marker=dict(size=9, opacity=0.85, line=dict(width=0.8, color="#FAF8F2")),
             selector=dict(mode="markers"),
