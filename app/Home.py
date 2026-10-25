@@ -115,6 +115,7 @@ if metric_col not in view.columns:
 # Dynamic Analytical Lede (Findings Statement)
 # ---------------------------------------------------------------------------
 n_states = view["district_name"].nunique()
+n_districts = n_states
 avg_score = view[metric_col].mean()
 n_crit = int((view["risk_band"] == "Critical").sum()) if "risk_band" in view.columns else 0
 n_high = int((view["risk_band"] == "High").sum()) if "risk_band" in view.columns else 0
@@ -142,8 +143,8 @@ completeness = (
 
 render_editorial_scorecard([
     {
-        "label": "Jurisdictions Audited",
-        "value": str(n_districts),
+        "label": "States & UTs Audited",
+        "value": str(n_states),
         "note": "States & Union Territories evaluated",
         "tag": "Synchronized",
         "tag_bg": "#EAEFEA",
