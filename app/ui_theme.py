@@ -828,7 +828,7 @@ def render_sidebar_masthead(data_status: dict) -> None:
 # Editorial Plotly Styler & Master Layout Helper
 # ---------------------------------------------------------------------------
 def plotly_editorial_layout(
-    height: int = 380,
+    height: int = 400,
     title: str = "",
     subtitle: str = "",
     show_grid: bool = True,
@@ -841,6 +841,9 @@ def plotly_editorial_layout(
             font=dict(family="Newsreader, Georgia, serif", size=15, color="#14241D"),
             x=0.0,
             xanchor="left",
+            y=0.98,
+            yanchor="top",
+            pad=dict(b=12, t=0),
         )
 
     layout = dict(
@@ -853,13 +856,13 @@ def plotly_editorial_layout(
             color="#2C312E",
         ),
         title=full_title,
-        margin=dict(l=15, r=20, t=92 if subtitle else (72 if title else 32), b=38),
+        margin=dict(l=20, r=20, t=75 if subtitle else (60 if title else 25), b=80),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=1.08,
-            xanchor="right",
-            x=1.0,
+            yanchor="top",
+            y=-0.22,
+            xanchor="center",
+            x=0.5,
             font=dict(size=10, family="IBM Plex Mono, monospace"),
             bgcolor="rgba(247, 245, 238, 0.90)",
             bordercolor="#E2DED4",
@@ -899,7 +902,7 @@ def plotly_editorial_layout(
 
 def style_editorial_figure(
     fig: go.Figure,
-    height: int = 380,
+    height: int = 400,
     title: str = "",
     subtitle: str = "",
     show_grid: bool = True,

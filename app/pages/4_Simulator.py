@@ -450,7 +450,7 @@ if simulate_clicked or True:  # Real-time evaluation with execution state
         )
         style_editorial_figure(
             fig_sim,
-            height=360,
+            height=400,
             title=f"Counterfactual Impact Profile — {district}",
             subtitle="Observed telemetry versus simulated intervention response across core dimensions",
         )

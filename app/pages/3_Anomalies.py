@@ -266,7 +266,7 @@ if n_flagged > 0 and features_df is not None:
                 )
                 style_editorial_figure(
                     fig_comp,
-                    height=390,
+                    height=410,
                     title=f"Dimensional Discrepancy — {selected}",
                     subtitle="Target outlier relative to nationwide benchmark means (0 = optimal, 100 = distress)",
                 )
