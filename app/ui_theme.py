@@ -437,46 +437,32 @@ def render_masthead(
     location_tag: str = "TAMIL NADU CIVIC REGISTRY · 11°07' N, 78°39' E",
 ) -> None:
     """Render a newspaper / research folio masthead."""
-    html = f"""
-    <div class="folio-header">
-        <div>
-            <div class="folio-meta">{folio_code}</div>
-            <h1 class="masthead-title">{title}</h1>
-            <p class="masthead-deck">{deck}</p>
-        </div>
-        <div class="registration-mark">
-            {location_tag}
-        </div>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    html = (
+        f'<div class="folio-header">'
+        f'<div><div class="folio-meta">{folio_code}</div>'
+        f'<h1 class="masthead-title">{title}</h1>'
+        f'<p class="masthead-deck">{deck}</p></div>'
+        f'<div class="registration-mark">{location_tag}</div>'
+        f'</div>'
+    )
+    if hasattr(st, "html"):
+        st.html(html)
+    else:
+        st.markdown(html, unsafe_allow_html=True)
 
 
 def render_section_header(code: str, title: str, subtitle: str = "") -> None:
     """Render a crisp editorial section rule."""
     sub_html = f"<span style='font-size:0.8rem; color:#6E756C; font-family:\"IBM Plex Sans\"; margin-left:8px;'>— {subtitle}</span>" if subtitle else ""
-    html = f"""
-    <div class="section-rule">
-        <span class="section-code">{code}</span>
-        <span class="section-name">{title}</span>
-        {sub_html}
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    html = f'<div class="section-rule"><span class="section-code">{code}</span><span class="section-name">{title}</span>{sub_html}</div>'
+    if hasattr(st, "html"):
+        st.html(html)
+    else:
+        st.markdown(html, unsafe_allow_html=True)
 
 
 def render_editorial_scorecard(metrics: list[dict]) -> None:
-    """Render an integrated editorial horizontal scorecard with hairline cell dividers.
-
-    Parameters
-    ----------
-    metrics : list of dicts with keys:
-        - label (str): uppercase category description
-        - value (str or int or float): prominent reading numeral
-        - note (str): explanation or baseline comparison
-        - tag (str, optional): tiny tag text
-        - tag_style (dict, optional): bg, fg, border
-    """
+    """Render an integrated editorial horizontal scorecard with hairline cell dividers."""
     cells = []
     for m in metrics:
         tag_html = ""
@@ -484,28 +470,22 @@ def render_editorial_scorecard(metrics: list[dict]) -> None:
             bg = m.get("tag_bg", "#EFECE4")
             fg = m.get("tag_fg", "#444A43")
             border = m.get("tag_border", "#D5D0C5")
-            tag_html = f"""
-            <span class="scorecard-tag" style="background:{bg}; color:{fg}; border:1px solid {border};">
-                {m['tag']}
-            </span>
-            """
+            tag_html = f'<span class="scorecard-tag" style="background:{bg}; color:{fg}; border:1px solid {border};">{m["tag"]}</span>'
+        note_html = f'<div class="scorecard-note">{m.get("note", "")}</div>' if m.get("note") else ""
         cells.append(
-            f"""
-            <div class="scorecard-cell">
-                <span class="scorecard-label">{m['label']}</span>
-                <div class="scorecard-value">{m['value']}</div>
-                <div class="scorecard-note">{m.get('note', '')}</div>
-                {tag_html}
-            </div>
-            """
+            f'<div class="scorecard-cell">'
+            f'<span class="scorecard-label">{m["label"]}</span>'
+            f'<div class="scorecard-value">{m["value"]}</div>'
+            f'{note_html}'
+            f'{tag_html}'
+            f'</div>'
         )
 
-    grid_html = f"""
-    <div class="editorial-scorecard">
-        {''.join(cells)}
-    </div>
-    """
-    st.markdown(grid_html, unsafe_allow_html=True)
+    grid_html = f'<div class="editorial-scorecard">{"".join(cells)}</div>'
+    if hasattr(st, "html"):
+        st.html(grid_html)
+    else:
+        st.markdown(grid_html, unsafe_allow_html=True)
 
 
 def render_editorial_badge(band_name: str) -> str:
@@ -524,18 +504,19 @@ def render_editorial_badge(band_name: str) -> str:
 def render_sidebar_masthead(data_status: dict) -> None:
     """Render the research observatory identity in the sidebar."""
     with st.sidebar:
-        st.markdown(
-            """
-            <div class="sidebar-masthead">
-                <div class="sidebar-logotype">SAHAAYA</div>
-                <div class="sidebar-descriptor">State Civic Data Observatory</div>
-                <div style="font-family:'IBM Plex Sans'; font-size:0.75rem; color:#8A9A8E; margin-top:6px; line-height:1.4;">
-                    Multi-dimensional early-warning index synthesising UDISE+, NFHS-5, and MGNREGA telemetry for Tamil Nadu.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        sidebar_top = (
+            '<div class="sidebar-masthead">'
+            '<div class="sidebar-logotype">SAHAAYA</div>'
+            '<div class="sidebar-descriptor">State Civic Data Observatory</div>'
+            '<div style="font-family:\'IBM Plex Sans\'; font-size:0.75rem; color:#8A9A8E; margin-top:6px; line-height:1.4;">'
+            'Multi-dimensional early-warning index synthesising UDISE+, NFHS-5, and MGNREGA telemetry for India.'
+            '</div>'
+            '</div>'
         )
+        if hasattr(st, "html"):
+            st.html(sidebar_top)
+        else:
+            st.markdown(sidebar_top, unsafe_allow_html=True)
 
         with st.expander("Observatory Pipeline Status", expanded=False):
             items = [
@@ -547,24 +528,28 @@ def render_sidebar_masthead(data_status: dict) -> None:
             for label, ok in items:
                 status_symbol = "▪ SYNCHRONIZED" if ok else "▫ PENDING"
                 status_color = "#99BAA4" if ok else "#8E7569"
-                st.markdown(
-                    f"<div style='display:flex; justify-content:space-between; font-size:0.72rem; padding:4px 0; border-bottom:1px solid #233B2F; font-family:\"IBM Plex Mono\";'>"
+                row_html = (
+                    f"<div style='display:flex; justify-content:space-between; font-size:0.72rem; padding:4px 0; border-bottom:1px solid #233B2F; font-family:monospace;'>"
                     f"<span style='color:#C4CDC6;'>{label}</span>"
                     f"<span style='color:{status_color}; font-weight:600;'>{status_symbol}</span>"
-                    f"</div>",
-                    unsafe_allow_html=True,
+                    f"</div>"
                 )
+                if hasattr(st, "html"):
+                    st.html(row_html)
+                else:
+                    st.markdown(row_html, unsafe_allow_html=True)
 
-        st.markdown(
-            """
-            <div class="sidebar-meta-panel">
-                <div style="color:#7A8F80; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px;">GEOGRAPHIC ENVELOPE</div>
-                <div style="color:#FAF8F2; font-weight:500;">Tamil Nadu, India</div>
-                <div style="color:#7A8F80; font-size:0.65rem; margin-top:4px;">EPSG:4326 · Canonical Districts: 38</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        sidebar_bottom = (
+            '<div class="sidebar-meta-panel">'
+            '<div style="color:#7A8F80; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:2px;">GEOGRAPHIC ENVELOPE</div>'
+            '<div style="color:#FAF8F2; font-weight:500;">All-India States & UTs</div>'
+            '<div style="color:#7A8F80; font-size:0.65rem; margin-top:4px;">EPSG:4326 · Canonical Jurisdictions: 36</div>'
+            '</div>'
         )
+        if hasattr(st, "html"):
+            st.html(sidebar_bottom)
+        else:
+            st.markdown(sidebar_bottom, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
