@@ -1,5 +1,5 @@
 """
-SAHAAYA — What-If Scenario Simulator.
+SAHAAYA — Counterfactual What-If Scenario Simulator.
 
 Civic Intelligence, Editorial Precision aesthetic:
 Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
@@ -18,6 +18,7 @@ for p in [str(APP_DIR), str(ROOT)]:
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
@@ -31,6 +32,7 @@ from utils import (  # noqa: E402
     load_features,
     get_data_status,
     is_mock_data,
+    FEATURES_PATH,
     SUB_COLS,
     BAND_COLORS,
     BAND_ORDER,
@@ -38,12 +40,16 @@ from utils import (  # noqa: E402
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
     render_masthead,
+    render_editorial_lede,
     render_section_header,
     render_editorial_scorecard,
     render_editorial_badge,
     render_sidebar_masthead,
     style_editorial_figure,
+    source_note,
+    margin_note,
 )
+from src.features.vulnerability_index import assign_risk_band
 
 # ---------------------------------------------------------------------------
 # Theme & Masthead
@@ -52,10 +58,10 @@ inject_custom_theme()
 render_sidebar_masthead(get_data_status())
 
 render_masthead(
-    folio_code="POLICY EXPERIMENTATION LAB · COUNTERFACTUAL MODEL",
-    title="Intervention & What-If Scenario Simulator",
-    deck="Simulate targeted social and infrastructural investments (e.g., expanding school amenities, boosting maternal healthcare, strengthening rural wage guarantees) and evaluate estimated counterfactual shifts in composite district vulnerability.",
-    location_tag="DECISION-SUPPORT LAB · COUNTERFACTUAL INFERENCE",
+    folio_code="DECISION-SUPPORT LAB · COUNTERFACTUAL POLICY SIMULATOR · MODEL ESTIMATES",
+    title="Intervention & Counterfactual Scenario Simulator",
+    deck="Simulate targeted social and infrastructural investments (e.g., universal school amenities, pupil-teacher ratio optimization, maternal healthcare expansion) and evaluate estimated counterfactual shifts in composite district vulnerability.",
+    location_tag="COUNTERFACTUAL INFERENCE · REAL-TIME RE-INDEXING",
 )
 
 # ---------------------------------------------------------------------------
@@ -118,6 +124,30 @@ if not indicator_cols:
     st.stop()
 
 # ---------------------------------------------------------------------------
+# Preset Callback Helper (Sets session_state BEFORE widget instantiation)
+# ---------------------------------------------------------------------------
+def apply_preset_callback(preset_key: str, base_s: pd.Series, cols: list[str]):
+    """Update slider session_state variables before widgets render."""
+    for c in cols:
+        k = f"slider_{district}_{c}"
+        cur_v = float(base_s.get(c, 0.0))
+        if preset_key == "reset":
+            st.session_state[k] = round(cur_v, 2)
+        elif preset_key == "infra":
+            if any(term in c for term in ["electricity", "water", "toilet", "internet", "computer"]):
+                st.session_state[k] = 98.0
+        elif preset_key == "edu":
+            if "pupil_teacher_ratio" in c:
+                st.session_state[k] = min(cur_v, 22.0)
+            elif "schooling" in c:
+                st.session_state[k] = max(cur_v, 70.0)
+        elif preset_key == "health":
+            if any(term in c for term in ["stunting", "wasting"]):
+                st.session_state[k] = max(0.0, round(cur_v * 0.65, 2))
+            elif any(term in c for term in ["births", "insurance"]):
+                st.session_state[k] = min(100.0, round(cur_v * 1.35, 2))
+
+# ---------------------------------------------------------------------------
 # Baseline Profile Scorecard
 # ---------------------------------------------------------------------------
 def _fmt(val, decimals=1):
@@ -125,7 +155,7 @@ def _fmt(val, decimals=1):
         return "N/A"
     return f"{val:.{decimals}f}"
 
-render_section_header("SEC. 01", f"Baseline Scorecard — {district}", "Pre-Intervention Status")
+render_section_header("SEC. 01", f"Audited Baseline Status — {district}", "Observed Pre-Intervention Profile")
 
 band_base = baseline.get("risk_band", "Moderate")
 
@@ -133,7 +163,7 @@ render_editorial_scorecard([
     {
         "label": "Baseline Composite Index",
         "value": _fmt(baseline.get("overall_score")),
-        "note": "Combined pre-intervention risk",
+        "note": f"Audited Tier: {band_base}",
         "tag": str(band_base),
         "tag_bg": "#FAEDE3" if str(band_base) in ["High", "Critical"] else "#EAEFEA",
         "tag_fg": "#8C4318" if str(band_base) in ["High", "Critical"] else "#264230",
@@ -155,17 +185,63 @@ render_editorial_scorecard([
         "note": "Baseline rural wage stress",
     },
     {
-        "label": "Infra Deficit",
+        "label": "Civic Infrastructure",
         "value": _fmt(baseline.get("infra_risk")),
-        "note": "Baseline civic infrastructure",
+        "note": "Baseline physical amenities",
     },
 ])
 
 # ---------------------------------------------------------------------------
-# Interactive Intervention Sliders
+# Preset Policy Action Strip
 # ---------------------------------------------------------------------------
-render_section_header("SEC. 02", "Intervention Control Surface", "Counterfactual Parameter Sliders")
+render_section_header("SEC. 02", "Intervention Control Surface", "Policy Levers & Counterfactual Parameters")
 
+st.markdown(
+    "<div style='font-family:\"IBM Plex Mono\", monospace; font-size:0.7rem; color:#6E756C; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;'>"
+    "Rapid Scenario Presets:"
+    "</div>",
+    unsafe_allow_html=True,
+)
+
+p_col1, p_col2, p_col3, p_col4 = st.columns(4)
+with p_col1:
+    st.button(
+        "↺ RESET TO BASELINE",
+        on_click=apply_preset_callback,
+        args=("reset", baseline, indicator_cols),
+        use_container_width=True,
+        kind="secondary",
+    )
+with p_col2:
+    st.button(
+        "⚡ INFRASTRUCTURE PUSH",
+        on_click=apply_preset_callback,
+        args=("infra", baseline, indicator_cols),
+        use_container_width=True,
+        kind="secondary",
+    )
+with p_col3:
+    st.button(
+        "📚 EDUCATION RTE PUSH",
+        on_click=apply_preset_callback,
+        args=("edu", baseline, indicator_cols),
+        use_container_width=True,
+        kind="secondary",
+    )
+with p_col4:
+    st.button(
+        "🏥 NUTRITION & HEALTH PUSH",
+        on_click=apply_preset_callback,
+        args=("health", baseline, indicator_cols),
+        use_container_width=True,
+        kind="secondary",
+    )
+
+st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Interactive Parameter Sliders
+# ---------------------------------------------------------------------------
 st.markdown(
     """
     <div style="background:#FFFFFF; border:1px solid #E2DED4; border-top:2px solid #14241D; padding:18px 20px; margin-bottom:18px;">
@@ -196,14 +272,19 @@ for i in range(0, len(indicator_cols), n_per_row):
         cur = max(lo, min(hi, cur))
 
         clean_name = col_name.replace("_", " ").title()
+        slider_key = f"slider_{district}_{col_name}"
+
+        # Initialize session state if not set
+        if slider_key not in st.session_state:
+            st.session_state[slider_key] = round(cur, 2)
 
         with cols[j % n_per_row]:
             scenario_values[col_name] = st.slider(
                 clean_name,
                 min_value=round(lo, 2),
                 max_value=round(hi, 2),
-                value=round(cur, 2),
                 step=round((hi - lo) / 100, 4) or 0.01,
+                key=slider_key,
             )
 
 st.markdown("</div>", unsafe_allow_html=True)
@@ -213,11 +294,11 @@ st.markdown("</div>", unsafe_allow_html=True)
 # ---------------------------------------------------------------------------
 simulate_clicked = st.button("EXECUTE COUNTERFACTUAL SIMULATION", type="primary", use_container_width=True)
 
-if simulate_clicked:
+if simulate_clicked or True:  # Real-time evaluation with execution state
     simulator = None
     try:
         from src.models.simulate import WhatIfSimulator
-        simulator = WhatIfSimulator()
+        simulator = WhatIfSimulator(FEATURES_PATH)
     except Exception:
         simulator = None
 
@@ -228,20 +309,72 @@ if simulate_clicked:
         except Exception:
             simulator = None
 
-    if scenario_result is None:
+    if scenario_result is None or "scenario" not in scenario_result:
         modified = baseline.copy()
         for k, v in scenario_values.items():
             modified[k] = v
         dim_cols = [c for c in SUB_COLS.values() if c in modified.index and pd.notna(modified[c])]
-        scenario_result = {
+        scen_scores_dict = {
             "edu_risk": modified.get("edu_risk"),
             "health_risk": modified.get("health_risk"),
             "emp_risk": modified.get("emp_risk"),
             "infra_risk": modified.get("infra_risk"),
             "overall_score": modified[dim_cols].mean() if dim_cols else None,
         }
+    else:
+        scen_scores_dict = scenario_result.get("scenario", {})
 
-    render_section_header("SEC. 03", "Counterfactual Impact Assessment", "Pre vs. Post Intervention")
+    render_section_header("SEC. 03", "Counterfactual Impact Assessment", "Pre vs. Post Intervention Response")
+
+    # Overall shift calculations
+    b_overall = float(baseline.get("overall_score", 0.0))
+    s_overall = float(scen_scores_dict.get("overall_score", b_overall))
+    diff_overall = s_overall - b_overall
+    band_scen = assign_risk_band(s_overall)
+
+    delta_glyph = "▼" if diff_overall < -0.05 else ("▲" if diff_overall > 0.05 else "■")
+    delta_tag_bg = "#EAEFEA" if diff_overall < -0.05 else ("#F7E5DE" if diff_overall > 0.05 else "#EFECE4")
+    delta_tag_fg = "#264230" if diff_overall < -0.05 else ("#8A260F" if diff_overall > 0.05 else "#444A43")
+    delta_tag_border = "#BDCFBF" if diff_overall < -0.05 else ("#E5A997" if diff_overall > 0.05 else "#D5D0C5")
+
+    render_editorial_scorecard([
+        {
+            "label": "Audited Baseline Score",
+            "value": f"{b_overall:.1f}",
+            "note": f"Audited Risk Band: {band_base}",
+            "tag": str(band_base),
+            "tag_bg": "#FAEDE3" if str(band_base) in ["High", "Critical"] else "#EAEFEA",
+            "tag_fg": "#8C4318" if str(band_base) in ["High", "Critical"] else "#264230",
+            "tag_border": "#E8C1A5" if str(band_base) in ["High", "Critical"] else "#BDCFBF",
+        },
+        {
+            "label": "Simulated Counterfactual",
+            "value": f"{s_overall:.1f}",
+            "note": f"Estimated Post-Intervention Tier: {band_scen}",
+            "tag": str(band_scen),
+            "tag_bg": "#FAEDE3" if str(band_scen) in ["High", "Critical"] else "#EAEFEA",
+            "tag_fg": "#8C4318" if str(band_scen) in ["High", "Critical"] else "#264230",
+            "tag_border": "#E8C1A5" if str(band_scen) in ["High", "Critical"] else "#BDCFBF",
+        },
+        {
+            "label": "Estimated Net Variance",
+            "value": f"{diff_overall:+.1f}",
+            "note": "Net shift in composite vulnerability index",
+            "tag": f"{delta_glyph} {abs(diff_overall):.1f} pts",
+            "tag_bg": delta_tag_bg,
+            "tag_fg": delta_tag_fg,
+            "tag_border": delta_tag_border,
+        },
+        {
+            "label": "Tier Transition Trajectory",
+            "value": f"{band_base} → {band_scen}",
+            "note": "Policy reclassification status",
+            "tag": "De-escalated" if (diff_overall < -1.0 and band_base != band_scen) else "Maintained",
+            "tag_bg": "#EAEFEA" if (diff_overall < -1.0 and band_base != band_scen) else "#EFECE4",
+            "tag_fg": "#264230" if (diff_overall < -1.0 and band_base != band_scen) else "#444A43",
+            "tag_border": "#BDCFBF" if (diff_overall < -1.0 and band_base != band_scen) else "#D5D0C5",
+        },
+    ])
 
     comp_items = [
         ("Overall Composite Vulnerability", "overall_score"),
@@ -257,7 +390,7 @@ if simulate_clicked:
 
     for label, key in comp_items:
         bv = baseline.get(key)
-        sv = scenario_result.get(key) if isinstance(scenario_result, dict) else None
+        sv = scen_scores_dict.get(key)
         if pd.notna(bv) and pd.notna(sv):
             labels.append(label)
             base_scores.append(round(float(bv), 1))
@@ -267,55 +400,57 @@ if simulate_clicked:
         df_chart = pd.DataFrame({
             "Dimension": labels * 2,
             "Index": base_scores + scen_scores,
-            "State": ["Baseline (Audited)"] * len(labels) + ["Post-Intervention (Simulated)"] * len(labels),
+            "Cohort": ["Audited Baseline"] * len(labels) + ["Simulated Scenario"] * len(labels),
         })
 
         fig_sim = px.bar(
             df_chart,
             x="Dimension",
             y="Index",
-            color="State",
+            color="Cohort",
             barmode="group",
             range_y=[0, 100],
             color_discrete_map={
-                "Baseline (Audited)": "#5A665E",             # Muted sage/slate
-                "Post-Intervention (Simulated)": "#14241D",   # Deep forest green
+                "Audited Baseline": "#727C74",
+                "Simulated Scenario": "#14241D",
             },
             text="Index",
         )
         fig_sim.update_traces(
             textposition="outside",
-            marker=dict(line=dict(width=0.8, color="#14241D")),
-            textfont=dict(family="IBM Plex Mono", size=10),
+            marker=dict(line=dict(width=0.8, color="#FAF8F2")),
+            textfont=dict(family="IBM Plex Mono, monospace", size=10),
         )
         style_editorial_figure(
             fig_sim,
             height=360,
-            title=f"Counterfactual Impact Comparison — {district}",
-            subtitle="Observed telemetry versus simulated intervention response",
+            title=f"Counterfactual Impact Profile — {district}",
+            subtitle="Observed telemetry versus simulated intervention response across core dimensions",
         )
+        fig_sim.update_layout(yaxis_title="Vulnerability Index (0-100)")
         st.plotly_chart(fig_sim, use_container_width=True)
+        source_note("Hypothetical model estimates calculated via linear indicator rescaling")
 
     # Detailed Delta Ledger Table
     delta_rows = []
     for label, key in comp_items:
         bv = baseline.get(key)
-        sv = scenario_result.get(key) if isinstance(scenario_result, dict) else None
+        sv = scen_scores_dict.get(key)
         if pd.notna(bv) and pd.notna(sv):
             diff = float(sv) - float(bv)
-            if diff < -0.1:
-                status = "REDUCED / AMELIORATED"
-            elif diff > 0.1:
-                status = "ELEVATED RISK"
+            if diff < -0.05:
+                glyph = "▼ REDUCED"
+            elif diff > 0.05:
+                glyph = "▲ ELEVATED"
             else:
-                status = "PARITY / UNCHANGED"
+                glyph = "■ UNCHANGED"
 
             delta_rows.append({
                 "Evaluation Dimension": label,
                 "Audited Baseline": f"{bv:.1f}",
-                "Simulated Value": f"{sv:.1f}",
-                "Variance (Delta)": f"{diff:+.1f}",
-                "Trajectory": status,
+                "Simulated Scenario": f"{sv:.1f}",
+                "Net Delta": f"{diff:+.1f}",
+                "Trajectory": glyph,
             })
 
     if delta_rows:

@@ -1,5 +1,5 @@
 """
-SAHAAYA — District Detail Drill-Down.
+SAHAAYA — District & State Detail Drill-Down Dossier.
 
 Civic Intelligence, Editorial Precision aesthetic:
 Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
@@ -18,6 +18,7 @@ for p in [str(APP_DIR), str(ROOT)]:
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
@@ -35,15 +36,19 @@ from utils import (  # noqa: E402
     is_mock_data,
     SUB_COLS,
     BAND_COLORS,
+    BAND_ORDER,
 )
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
     render_masthead,
+    render_editorial_lede,
     render_section_header,
     render_editorial_scorecard,
     render_editorial_badge,
     render_sidebar_masthead,
     style_editorial_figure,
+    source_note,
+    margin_note,
 )
 
 # ---------------------------------------------------------------------------
@@ -67,7 +72,7 @@ if is_mock_data(df):
     st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# Control Ribbon — District Selector
+# Control Ribbon — District Selector & Quick-Filter Pills
 # ---------------------------------------------------------------------------
 time_col = "period" if "period" in df.columns else ("year" if "year" in df.columns else None)
 if time_col and df[time_col].nunique() > 1:
@@ -76,14 +81,33 @@ if time_col and df[time_col].nunique() > 1:
 else:
     view = df.copy()
 
-districts = sorted(view["district_name"].dropna().unique())
-if not districts:
+all_districts = sorted(view["district_name"].dropna().unique())
+if not all_districts:
     st.error("No districts located in the active telemetry repository.")
     st.stop()
 
+# Quick filter pill strip
+col_filter, col_period = st.columns([2.5, 1])
+with col_filter:
+    tier_choice = "All"
+    if "risk_band" in view.columns and hasattr(st, "pills"):
+        tier_choice = st.pills(
+            "Filter Jurisdictions by Vulnerability Tier",
+            ["All", "Critical", "High", "Moderate", "Low"],
+            default="All",
+        )
+        if not tier_choice:
+            tier_choice = "All"
+
+if tier_choice != "All" and "risk_band" in view.columns:
+    filtered_districts = sorted(view[view["risk_band"] == tier_choice]["district_name"].dropna().unique())
+    available_districts = filtered_districts if filtered_districts else all_districts
+else:
+    available_districts = all_districts
+
 col_sel1, col_sel2 = st.columns([2.5, 1])
 with col_sel1:
-    district = st.selectbox("Selected Administrative Jurisdiction", districts, index=0)
+    district = st.selectbox("Selected Administrative Jurisdiction", available_districts, index=0)
 with col_sel2:
     period_str = str(view[time_col].iloc[0]) if time_col and not view.empty else "Current Administrative Audit"
     st.selectbox("Reporting Period", [period_str], disabled=True)
@@ -97,24 +121,51 @@ latest = row.iloc[0]
 district_id = latest.get("district_id", "N/A")
 band = latest.get("risk_band", "Moderate")
 
+# Compute national ranks and percentiles
+view_ranked = view.sort_values("overall_score", ascending=False).reset_index(drop=True)
+view_ranked["rank"] = view_ranked.index + 1
+rank_val = view_ranked[view_ranked["district_name"] == district]["rank"].values[0]
+total_units = len(view_ranked)
+pctile = (total_units - rank_val) / total_units * 100
+
 # ---------------------------------------------------------------------------
 # Dossier Folio Masthead
 # ---------------------------------------------------------------------------
 render_masthead(
-    folio_code=f"JURISDICTION DOSSIER · CODE: {district_id}",
+    folio_code=f"JURISDICTION DOSSIER · CODE: {district_id} · NATIONAL RANK #{rank_val} OF {total_units}",
     title=district,
-    deck=f"Diagnostic vulnerability dossier for {district} district/state. Telemetry synthesized across demographic, nutritional, and institutional service delivery indices.",
+    deck=f"Diagnostic vulnerability dossier for {district}. Telemetry synthesized across educational delivery (UDISE+), maternal and child nutrition (NFHS-5), and civic infrastructure.",
     location_tag=f"TIER: {band.upper()} VULNERABILITY",
 )
 
 # ---------------------------------------------------------------------------
-# Integrated Scorecard
+# Dynamic Analytical Lede (Findings Statement)
 # ---------------------------------------------------------------------------
 def _fmt(val, decimals=1):
     if pd.isna(val):
         return "N/A"
     return f"{val:.{decimals}f}"
 
+dim_scores = {}
+for label, col in SUB_COLS.items():
+    v = latest.get(col)
+    if pd.notna(v):
+        dim_scores[label] = float(v)
+
+if dim_scores:
+    worst_dim = max(dim_scores.items(), key=lambda x: x[1])
+    best_dim = min(dim_scores.items(), key=lambda x: x[1])
+    lede_summary = (
+        f"{district} is categorized in the {band.upper()} risk band with a composite index of "
+        f"{_fmt(latest.get('overall_score'))} / 100 (national rank #{rank_val} of {total_units}). "
+        f"The primary driver of institutional stress is {worst_dim[0]} (index {worst_dim[1]:.1f}), "
+        f"while {best_dim[0]} represents the jurisdiction's most resilient baseline (index {best_dim[1]:.1f})."
+    )
+    render_editorial_lede(lede_summary)
+
+# ---------------------------------------------------------------------------
+# Integrated Scorecard
+# ---------------------------------------------------------------------------
 comp_val = latest.get("data_completeness")
 comp_str = f"{comp_val:.0%}" if pd.notna(comp_val) else "N/A"
 
@@ -122,7 +173,7 @@ render_editorial_scorecard([
     {
         "label": "Overall Composite Index",
         "value": _fmt(latest.get("overall_score")),
-        "note": "Combined risk index",
+        "note": f"Rank #{rank_val} · Percentile {pctile:.0f}%",
         "tag": str(band),
         "tag_bg": "#FAEDE3" if str(band) in ["High", "Critical"] else "#EAEFEA",
         "tag_fg": "#8C4318" if str(band) in ["High", "Critical"] else "#264230",
@@ -131,27 +182,27 @@ render_editorial_scorecard([
     {
         "label": "Education Vulnerability",
         "value": _fmt(latest.get("edu_risk")),
-        "note": "UDISE+ infrastructure & enrollment",
+        "note": "PTR & female literacy deficits",
     },
     {
         "label": "Healthcare Deficit",
         "value": _fmt(latest.get("health_risk")),
-        "note": "NFHS-5 maternal & child nutrition",
+        "note": "NFHS-5 child & maternal nutrition",
     },
     {
         "label": "Employment Deficit",
         "value": _fmt(latest.get("emp_risk")),
-        "note": "MGNREGA personday coverage",
+        "note": "Safety net & wage guarantees",
     },
     {
         "label": "Civic Infrastructure",
         "value": _fmt(latest.get("infra_risk")),
-        "note": "Drinking water, sanitation, power",
+        "note": "Power, drinking water, internet",
     },
     {
         "label": "Audited Telemetry",
         "value": comp_str,
-        "note": "Feature presence across dimensions",
+        "note": "Multi-sector indicator coverage",
         "tag": "Verified",
         "tag_bg": "#EFECE4",
         "tag_fg": "#444A43",
@@ -162,55 +213,82 @@ render_editorial_scorecard([
 # ---------------------------------------------------------------------------
 # Asymmetric Layout: Risk Breakdown vs. Typology & Anomaly Status
 # ---------------------------------------------------------------------------
-col_left, col_right = st.columns([1.2, 1])
+col_left, col_right = st.columns([1.5, 1])
 
 with col_left:
-    render_section_header("SEC. 01", "Dimension Decomposition", "Normalized Stress Profiles")
+    render_section_header("SEC. 01", "Dimension Decomposition", "Normalized Stress Profiles vs. National Medians")
 
     dim_data = []
     for label, col in SUB_COLS.items():
         val = latest.get(col)
+        med = view[col].median() if col in view.columns else None
         if pd.notna(val):
-            dim_data.append({"Dimension": label, "Index": float(val)})
+            dim_data.append({
+                "Dimension": label,
+                "Jurisdiction Index": float(val),
+                "National Median": float(med) if pd.notna(med) else None,
+            })
 
     if dim_data:
         dim_df = pd.DataFrame(dim_data)
-        fig_dim = px.bar(
-            dim_df,
-            x="Index",
-            y="Dimension",
+        fig_dim = go.Figure()
+
+        # National median benchmark background bars
+        if "National Median" in dim_df.columns:
+            fig_dim.add_trace(go.Bar(
+                name="National Benchmark Median",
+                y=dim_df["Dimension"],
+                x=dim_df["National Median"],
+                orientation="h",
+                marker=dict(color="#E2DED4", line=dict(width=0)),
+                hoverinfo="x+name",
+            ))
+
+        # Jurisdiction actual bars
+        fig_dim.add_trace(go.Bar(
+            name=district,
+            y=dim_df["Dimension"],
+            x=dim_df["Jurisdiction Index"],
             orientation="h",
-            range_x=[0, 100],
-            color="Index",
-            color_continuous_scale=[
-                [0.0, "#385E48"],   # Deep sage
-                [0.4, "#827845"],   # Antique olive
-                [0.7, "#BA6835"],   # Terracotta
-                [1.0, "#A83C1F"],   # Burnt sienna
-            ],
-            text="Index",
-        )
-        fig_dim.update_traces(
-            texttemplate="%{x:.1f}",
+            marker=dict(
+                color=dim_df["Jurisdiction Index"],
+                colorscale=[
+                    [0.0, "#385E48"],   # Sage green
+                    [0.4, "#827845"],   # Antique olive
+                    [0.7, "#BA6835"],   # Terracotta
+                    [1.0, "#A83C1F"],   # Burnt sienna
+                ],
+                cmin=0,
+                cmax=100,
+                line=dict(width=0.8, color="#14241D"),
+            ),
+            text=dim_df["Jurisdiction Index"].apply(lambda v: f"{v:.1f}"),
             textposition="outside",
-            marker=dict(line=dict(width=0.8, color="#253528")),
-            textfont=dict(family="IBM Plex Mono", size=10),
-        )
+            textfont=dict(family="IBM Plex Mono, monospace", size=10),
+            hoverinfo="x+name",
+        ))
+
         style_editorial_figure(
             fig_dim,
-            height=300,
+            height=320,
             title=f"Dimensional Burden — {district}",
-            subtitle="Relative intensity across four core pillars (0 = optimal, 100 = distress)",
+            subtitle="Solid bars reflect jurisdiction index; grey bars reflect national median (0 = optimal, 100 = distress)",
         )
-        fig_dim.update_layout(coloraxis_showscale=False, yaxis_title="")
+        fig_dim.update_layout(
+            barmode="overlay",
+            xaxis=dict(range=[0, 105], title=dict(text="Vulnerability Index (0-100)", font=dict(family="IBM Plex Mono, monospace", size=10))),
+            yaxis=dict(title=""),
+            legend=dict(x=1, y=1.05, orientation="h"),
+        )
         st.plotly_chart(fig_dim, use_container_width=True)
+        source_note("UDISE+ 2022-23 · NFHS-5 (2019-21) standardized indicator matrices")
     else:
         st.info("No dimension scores available for this jurisdiction.")
 
 with col_right:
     render_section_header("SEC. 02", "Typology & Diagnostic Flags", "Machine Learning Intelligence")
 
-    # Cluster Card
+    # Cluster Archetype Card
     cluster_id = None
     if clusters_df is not None:
         match = clusters_df[clusters_df["district_name"] == district]
@@ -220,7 +298,7 @@ with col_right:
         cluster_id = latest["cluster"]
 
     if cluster_id is not None:
-        cid_str = f"Typology Archetype {int(cluster_id)}"
+        cid_str = f"Archetype {int(cluster_id)}"
         if clusters_df is not None:
             siblings = sorted(clusters_df[clusters_df["cluster"] == cluster_id]["district_name"].dropna().unique().tolist())
         else:
@@ -228,24 +306,15 @@ with col_right:
         siblings = [n for n in siblings if n != district]
         sib_text = ", ".join(siblings[:6]) + (f" + {len(siblings)-6} others" if len(siblings) > 6 else "")
 
-        st.markdown(
-            f"""
-            <div style="background:#FFFFFF; border:1px solid #E2DED4; border-left:3px solid #14241D; padding:14px 16px; margin-bottom:14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; color:#6E756C; text-transform:uppercase; letter-spacing:0.1em;">K-Means Typology</span>
-                    <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#14241D;">{cid_str}</span>
-                </div>
-                <div style="font-family:'IBM Plex Sans'; font-size:0.84rem; color:#333733; margin-top:6px; line-height:1.45;">
-                    <b>Statistical Peer Cohort:</b> {sib_text if sib_text else "No peer districts identified."}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        margin_note(
+            kicker="K-Means Typology Partition",
+            title=f"Peer Cohort: {cid_str}",
+            text=f"<b>Statistically Homogenous Cohort:</b> {sib_text if sib_text else 'Unique standalone profile.'}<br><br>Jurisdictions in this cluster share structural socio-economic characteristics and benefit from synchronized policy packages.",
         )
     else:
         st.info("Typology assignments not compiled.")
 
-    # Anomaly Card
+    # Isolation Forest Anomaly Card
     if anomalies_df is not None:
         amatch = anomalies_df[anomalies_df["district_name"] == district]
         if not amatch.empty:
@@ -257,13 +326,13 @@ with col_right:
             if flagged:
                 st.markdown(
                     f"""
-                    <div style="background:#F7E5DE; border:1px solid #E5A997; border-left:3px solid #B84324; padding:14px 16px;">
+                    <div style="background:#F7E5DE; border:1px solid #E5A997; border-left:3px solid #B84324; padding:14px 16px; margin-bottom:14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; font-weight:600; color:#8A260F; text-transform:uppercase; letter-spacing:0.1em;">§ Anomaly Flagged</span>
-                            <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#8A260F;">Score: {_fmt(ascore, 1)} / 100</span>
+                            <span style="font-family:'IBM Plex Mono', monospace; font-size:0.68rem; font-weight:600; color:#8A260F; text-transform:uppercase; letter-spacing:0.1em;">§ Multivariate Outlier Flagged</span>
+                            <span style="font-family:'IBM Plex Mono', monospace; font-size:0.75rem; font-weight:600; color:#8A260F;">Score: {_fmt(ascore, 1)} / 100</span>
                         </div>
-                        <div style="font-family:'IBM Plex Sans'; font-size:0.82rem; color:#611A0B; margin-top:6px; line-height:1.45;">
-                            <b>Divergent Features:</b> <code>{unusual}</code>
+                        <div style="font-family:'IBM Plex Sans', sans-serif; font-size:0.82rem; color:#611A0B; margin-top:6px; line-height:1.45;">
+                            <b>Divergent Feature Drivers:</b> <code>{unusual}</code>
                         </div>
                     </div>
                     """,
@@ -272,13 +341,13 @@ with col_right:
             else:
                 st.markdown(
                     f"""
-                    <div style="background:#EAEFEA; border:1px solid #BDCFBF; border-left:3px solid #385E48; padding:14px 16px;">
+                    <div style="background:#EAEFEA; border:1px solid #BDCFBF; border-left:3px solid #385E48; padding:14px 16px; margin-bottom:14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-family:'IBM Plex Mono'; font-size:0.68rem; font-weight:600; color:#264230; text-transform:uppercase; letter-spacing:0.1em;">Standard Distribution Envelope</span>
-                            <span style="font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:600; color:#264230;">Score: {_fmt(ascore, 1)} / 100</span>
+                            <span style="font-family:'IBM Plex Mono', monospace; font-size:0.68rem; font-weight:600; color:#264230; text-transform:uppercase; letter-spacing:0.1em;">Nominal Statistical Envelope</span>
+                            <span style="font-family:'IBM Plex Mono', monospace; font-size:0.75rem; font-weight:600; color:#264230;">Score: {_fmt(ascore, 1)} / 100</span>
                         </div>
-                        <div style="font-family:'IBM Plex Sans'; font-size:0.82rem; color:#264230; margin-top:6px;">
-                            No anomalous multi-variate deviation detected relative to regional peer trajectories.
+                        <div style="font-family:'IBM Plex Sans', sans-serif; font-size:0.82rem; color:#264230; margin-top:6px; line-height:1.45;">
+                            No multivariate trajectory divergence detected relative to national baseline envelopes.
                         </div>
                     </div>
                     """,
@@ -286,9 +355,9 @@ with col_right:
                 )
 
 # ---------------------------------------------------------------------------
-# Raw Indicator Telemetry Table
+# Raw Indicator Telemetry Ledger
 # ---------------------------------------------------------------------------
-render_section_header("SEC. 03", "Primary Telemetry Ledger", "Raw Survey Observations")
+render_section_header("SEC. 03", "Primary Telemetry Ledger", "Raw Survey Observations & Benchmarks")
 
 standard_cols = {
     "district_id", "district_name", "state", "period", "year",
@@ -299,20 +368,37 @@ standard_cols = {
 indicator_cols = [c for c in row.columns if c not in standard_cols]
 
 if indicator_cols:
-    indicator_data = row[indicator_cols].T.copy()
-    indicator_data.columns = ["Reported Metric"]
-    indicator_data.index.name = "Telemetry Indicator Field"
-    indicator_data["Reported Metric"] = indicator_data["Reported Metric"].apply(
-        lambda v: f"{v:,.2f}" if isinstance(v, (int, float)) and pd.notna(v) else ("N/A" if pd.isna(v) else str(v))
-    ).astype(str)
-    st.dataframe(indicator_data, use_container_width=True)
+    ledger_rows = []
+    for c in indicator_cols:
+        val = row[c].values[0]
+        nat_med = view[c].median() if c in view.columns and pd.api.types.is_numeric_dtype(view[c]) else None
+        clean_name = c.replace("_", " ").title()
+        
+        val_str = f"{val:,.2f}" if isinstance(val, (int, float)) and pd.notna(val) else ("N/A" if pd.isna(val) else str(val))
+        med_str = f"{nat_med:,.2f}" if isinstance(nat_med, (int, float)) and pd.notna(nat_med) else "N/A"
+        
+        ledger_rows.append({
+            "Indicator Field": clean_name,
+            f"{district} Reported Value": val_str,
+            "National Median": med_str,
+        })
+        
+    ledger_df = pd.DataFrame(ledger_rows)
+    st.dataframe(ledger_df, hide_index=True, use_container_width=True)
 else:
     st.info("No raw telemetry fields found beyond composite indices.")
 
-with st.expander("Jurisdiction Telemetry Provenance"):
-    st.markdown(
-        f"- **Canonical Identifier:** `{district_id}`\n"
-        f"- **Observation Window:** `{latest.get(time_col, 'Current')}`\n"
-        f"- **Constituent Features Audited:** `{len(indicator_cols)} variables`\n"
-        f"- **Standardization Rule:** Min-max feature clipping against historical state extrema."
-    )
+with st.expander("Jurisdiction Telemetry Provenance & Methodological Audit"):
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            f"- **Canonical Identifier:** `{district_id}`\n"
+            f"- **Observation Window:** `{latest.get(time_col, 'Current')}`\n"
+            f"- **Standardization Rule:** Min-max feature clipping against historical empirical extrema."
+        )
+    with c2:
+        st.markdown(
+            f"- **Constituent Features Audited:** `{len(indicator_cols)} indicators`\n"
+            f"- **Risk Classification Threshold:** High (`50–65`), Critical (`≥ 65`)\n"
+            f"- **Cluster Membership:** `{cid_str if cluster_id is not None else 'N/A'}`"
+        )

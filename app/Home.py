@@ -1,5 +1,5 @@
 """
-SAHAAYA Home — Statewide social-vulnerability dashboard for Tamil Nadu.
+SAHAAYA Home — Statewide social-vulnerability dashboard for India.
 
 Civic Intelligence, Editorial Precision aesthetic:
 Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
@@ -40,10 +40,13 @@ from utils import (  # noqa: E402
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
     render_masthead,
+    render_editorial_lede,
     render_section_header,
     render_editorial_scorecard,
     render_sidebar_masthead,
     style_editorial_figure,
+    source_note,
+    margin_note,
     MAP_COLORSCALE,
 )
 
@@ -54,7 +57,7 @@ inject_custom_theme()
 render_sidebar_masthead(get_data_status())
 
 render_masthead(
-    folio_code="VOL. IV · DISPATCH 2026.10 · STATE REGISTRY SURVEY",
+    folio_code="VOL. IV · DISPATCH 2026.10 · NATIONAL REGISTRY SURVEY",
     title="India Social Vulnerability & Early Warning Observatory",
     deck="Multi-sectoral early warning radar synthesizing educational delivery (UDISE+), public health telemetry (NFHS-5), and civic infrastructure across 36 States and Union Territories.",
     location_tag="ALL-INDIA · 20°35' N, 78°57' E",
@@ -98,8 +101,8 @@ with col_f2:
 with col_f3:
     st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
     st.markdown(
-        f"<div style='font-family:\"IBM Plex Mono\"; font-size:0.7rem; color:#6E756C; text-align:right; padding-top:6px;'>"
-        f"DISTRICTS: <b>{view['district_name'].nunique()}</b>"
+        f"<div style='font-family:\"IBM Plex Mono\", monospace; font-size:0.7rem; color:#6E756C; text-align:right; padding-top:6px;'>"
+        f"JURISDICTIONS: <b>{view['district_name'].nunique()}</b>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -109,15 +112,28 @@ if metric_col not in view.columns:
     st.stop()
 
 # ---------------------------------------------------------------------------
-# Integrated Editorial Scorecard (Replaces Generic Floating Cards)
+# Dynamic Analytical Lede (Findings Statement)
 # ---------------------------------------------------------------------------
 n_districts = view["district_name"].nunique()
 avg_score = view[metric_col].mean()
-high_crit = (
-    view["risk_band"].isin(["High", "Critical"]).sum()
-    if "risk_band" in view.columns
-    else "N/A"
+n_crit = int((view["risk_band"] == "Critical").sum()) if "risk_band" in view.columns else 0
+n_high = int((view["risk_band"] == "High").sum()) if "risk_band" in view.columns else 0
+high_crit = n_crit + n_high
+
+top_row = view.sort_values(metric_col, ascending=False).iloc[0]
+top_stressed = top_row["district_name"]
+top_score = top_row[metric_col]
+
+lede_msg = (
+    f"Across {n_districts} audited States & Union Territories, {high_crit} jurisdictions sit in the elevated "
+    f"risk tiers ({n_crit} Critical, {n_high} High). Stress in {metric_label.lower()} is most acutely concentrated "
+    f"in {top_stressed} (index score {top_score:.1f} / 100), against a national benchmark average of {avg_score:.1f}."
 )
+render_editorial_lede(lede_msg)
+
+# ---------------------------------------------------------------------------
+# Integrated Editorial Scorecard
+# ---------------------------------------------------------------------------
 completeness = (
     f"{view['data_completeness'].mean():.0%}"
     if "data_completeness" in view.columns
@@ -128,7 +144,7 @@ render_editorial_scorecard([
     {
         "label": "Jurisdictions Audited",
         "value": str(n_districts),
-        "note": "States & Union Territories audited",
+        "note": "States & Union Territories evaluated",
         "tag": "Synchronized",
         "tag_bg": "#EAEFEA",
         "tag_fg": "#264230",
@@ -137,21 +153,21 @@ render_editorial_scorecard([
     {
         "label": f"Mean {metric_label.split()[0]} Index",
         "value": f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A",
-        "note": "Normalized 0–100 scale (higher indicates elevated stress)",
+        "note": "0–100 normalized baseline index",
     },
     {
         "label": "High & Critical Quartile",
         "value": str(high_crit),
-        "note": "Districts requiring immediate intervention",
-        "tag": "Priority Alert",
-        "tag_bg": "#F7E5DE",
-        "tag_fg": "#8A260F",
-        "tag_border": "#E5A997",
+        "note": f"{n_crit} critical, {n_high} high urgency",
+        "tag": "Priority Alert" if high_crit > 0 else "Nominal",
+        "tag_bg": "#F7E5DE" if high_crit > 0 else "#EAEFEA",
+        "tag_fg": "#8A260F" if high_crit > 0 else "#264230",
+        "tag_border": "#E5A997" if high_crit > 0 else "#BDCFBF",
     },
     {
         "label": "Telemetry Completeness",
         "value": str(completeness),
-        "note": "Mean multi-sector feature parity across inputs",
+        "note": "Feature coverage across survey indicators",
         "tag": "Audited",
         "tag_bg": "#EFECE4",
         "tag_fg": "#444A43",
@@ -162,7 +178,7 @@ render_editorial_scorecard([
 # ---------------------------------------------------------------------------
 # Main Asymmetric Canvas — Cartographic View & Watchlist
 # ---------------------------------------------------------------------------
-col_map, col_tables = st.columns([1.5, 1])
+col_map, col_tables = st.columns([1.6, 1])
 
 with col_map:
     render_section_header("SEC. 01", "Geographic Vulnerability Distribution", "Spatial Deciling")
@@ -191,30 +207,31 @@ with col_map:
             bgcolor="rgba(0,0,0,0)",
         )
         fig_map.update_traces(
-            marker_line_width=0.6,
-            marker_line_color="#2B362F",
+            marker_line_width=0.75,
+            marker_line_color="#FAF8F2",
         )
         style_editorial_figure(
             fig_map,
-            height=600,
+            height=580,
             title="Cartographic Survey",
             subtitle=f"Spatial deciling across India · {metric_label}",
         )
         fig_map.update_layout(
             coloraxis_colorbar=dict(
-                title=dict(text="Index", font=dict(family="IBM Plex Mono", size=10)),
+                title=dict(text="Index (0-100)", font=dict(family="IBM Plex Mono, monospace", size=10)),
                 thickness=10,
-                len=0.65,
+                len=0.6,
                 x=0.98,
-                tickfont=dict(size=9, family="IBM Plex Mono", color="#5E655D"),
-                bgcolor="rgba(247, 245, 238, 0.8)",
+                tickfont=dict(size=9, family="IBM Plex Mono, monospace", color="#5E655D"),
+                bgcolor="rgba(247, 245, 238, 0.85)",
                 bordercolor="#E2DED4",
                 borderwidth=1,
             )
         )
         st.plotly_chart(fig_map, use_container_width=True)
+        source_note("Survey of India boundary alignment · MoE UDISE+ 2022-23 · MoHFW NFHS-5 (2019-21)")
     else:
-        st.info("Boundary geometry not detected. Showing rank-ordered bar chart.")
+        st.info("Boundary geometry not detected. Showing rank-ordered distribution.")
         sorted_view = view.sort_values(metric_col, ascending=True)
         fig_bar = px.bar(
             sorted_view,
@@ -245,16 +262,17 @@ with col_tables:
         .head(10)[display_cols]
         .copy()
     )
-    rename = {"district_name": "District", metric_col: "Index"}
+    rename = {"district_name": "Jurisdiction", metric_col: "Index"}
     if "risk_band" in top.columns:
         rename["risk_band"] = "Risk Band"
     top.rename(columns=rename, inplace=True)
-    top["Index"] = top["Index"].round(1)
+    top["Index"] = top["Index"].apply(lambda v: f"{v:.1f}" if pd.notna(v) else "N/A")
+    top.insert(0, "Rank", [f"#{i+1}" for i in range(len(top))])
 
     st.dataframe(top, hide_index=True, use_container_width=True)
 
-    st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
-    render_section_header("SEC. 03", "Statewide Risk-Band Census", "Categorical Classification")
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    render_section_header("SEC. 03", "Risk Tier Census", "Categorical Classification")
 
     if "risk_band" in view.columns:
         counts = (
@@ -278,17 +296,87 @@ with col_tables:
         )
         fig_band.update_traces(
             textposition="outside",
-            marker=dict(line=dict(width=1, color="#2D332D")),
-            textfont=dict(family="IBM Plex Mono", size=10),
+            marker=dict(line=dict(width=0.8, color="#14241D")),
+            textfont=dict(family="IBM Plex Mono, monospace", size=10),
         )
         style_editorial_figure(
             fig_band,
-            height=250,
-            title="Risk Tier Census",
+            height=240,
+            title="Census Distribution",
             subtitle="Frequency distribution across 4 canonical tiers",
         )
-        fig_band.update_layout(showlegend=False)
+        fig_band.update_layout(showlegend=False, yaxis_title="Jurisdictions")
         st.plotly_chart(fig_band, use_container_width=True)
+
+# ---------------------------------------------------------------------------
+# Section 04: Cross-Sectoral Correlation & Structural Trade-offs
+# ---------------------------------------------------------------------------
+render_section_header("SEC. 04", "Cross-Sectoral Trade-off Analysis", "Healthcare Deficit vs. Education Vulnerability")
+
+col_scatter, col_scatter_note = st.columns([1.6, 1])
+
+with col_scatter:
+    if "edu_risk" in view.columns and "health_risk" in view.columns:
+        fig_corr = px.scatter(
+            view,
+            x="edu_risk",
+            y="health_risk",
+            color="risk_band" if "risk_band" in view.columns else None,
+            color_discrete_map=BAND_COLORS,
+            category_orders={"risk_band": BAND_ORDER},
+            hover_name="district_name",
+            hover_data={
+                "district_name": False,
+                "edu_risk": ":.1f",
+                "health_risk": ":.1f",
+                "overall_score": ":.1f",
+            },
+            labels={
+                "edu_risk": "Education Vulnerability Index (0-100)",
+                "health_risk": "Healthcare Deficit Index (0-100)",
+                "risk_band": "Risk Band",
+            },
+        )
+        fig_corr.update_traces(
+            marker=dict(size=9, opacity=0.85, line=dict(width=0.8, color="#FFFFFF"))
+        )
+        
+        # Add National Median Benchmark lines
+        med_edu = view["edu_risk"].median()
+        med_health = view["health_risk"].median()
+        
+        fig_corr.add_vline(x=med_edu, line_width=1, line_dash="dash", line_color="#8A9188")
+        fig_corr.add_hline(y=med_health, line_width=1, line_dash="dash", line_color="#8A9188")
+        
+        style_editorial_figure(
+            fig_corr,
+            height=380,
+            title="Bi-Axial Sectoral Correlation",
+            subtitle=f"Dashed rules denote national medians (Edu: {med_edu:.1f}, Health: {med_health:.1f})",
+        )
+        st.plotly_chart(fig_corr, use_container_width=True)
+        source_note("NFHS-5 nutritional & healthcare metrics vs. UDISE+ pupil-teacher ratios and literacy")
+
+with col_scatter_note:
+    margin_note(
+        kicker="How to Read This Scatter",
+        title="Identifying Compounded Distress",
+        text=(
+            "Jurisdictions falling in the upper-right quadrant experience compounded vulnerability, "
+            "where education bottlenecks (elevated pupil-teacher ratios, low female schooling) coincide with "
+            "severe maternal and child nutrition deficits. Interventions in these areas require multi-ministerial "
+            "coordination rather than isolated departmental schemes."
+        ),
+    )
+    if "edu_risk" in view.columns and "health_risk" in view.columns:
+        both_high = view[(view["edu_risk"] >= med_edu) & (view["health_risk"] >= med_health)]["district_name"].tolist()
+        st.markdown(
+            f"<div style='font-family:\"IBM Plex Mono\", monospace; font-size:0.72rem; color:#444A43; line-height:1.5; padding:8px 0;'>"
+            f"<b>Compounded Vulnerability Cohort ({len(both_high)}):</b><br>"
+            f"{', '.join(both_high[:6]) + (f' + {len(both_high)-6} others' if len(both_high)>6 else '')}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
 # ---------------------------------------------------------------------------
 # Editorial Colophon & Methodology
@@ -298,7 +386,7 @@ with st.expander("Methodological Notes & Ingestion Provenance"):
     with c1:
         st.markdown(
             "**Data Sources & Normalization**\n\n"
-            "Indices are computed using min-max linear feature scaling normalized over historical state bounds. "
+            "Indices are computed using min-max linear feature scaling normalized over historical empirical bounds. "
             "Primary inputs include UDISE+ school infrastructure and enrollment telemetry, NFHS-5 district nutritional indicators, "
             "and MGNREGA rural employment person-day metrics."
         )
@@ -314,5 +402,5 @@ with st.expander("Methodological Notes & Ingestion Provenance"):
             f"**Audit Parameters**\n\n"
             f"- Observation Period: `{view[time_col].iloc[0] if time_col else 'Current'}`\n"
             f"- Integrated Telemetry Fields: `{len(source_cols)} indicators`\n"
-            f"- Canonical Geometries: `38 districts (Tamil Nadu Survey 2021-2024)`"
+            f"- Canonical Geometries: `36 States & Union Territories (All-India Survey)`"
         )

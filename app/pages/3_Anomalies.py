@@ -1,5 +1,5 @@
 """
-SAHAAYA — Anomaly Detection Results Page.
+SAHAAYA — Multivariate Anomaly Detection Registry.
 
 Civic Intelligence, Editorial Precision aesthetic:
 Warm ivory surfaces, deep forest-green accents, Newsreader serif typography,
@@ -18,6 +18,7 @@ for p in [str(APP_DIR), str(ROOT)]:
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
@@ -37,10 +38,13 @@ from utils import (  # noqa: E402
 from ui_theme import (  # noqa: E402
     inject_custom_theme,
     render_masthead,
+    render_editorial_lede,
     render_section_header,
     render_editorial_scorecard,
     render_sidebar_masthead,
     style_editorial_figure,
+    source_note,
+    margin_note,
 )
 
 # ---------------------------------------------------------------------------
@@ -50,10 +54,10 @@ inject_custom_theme()
 render_sidebar_masthead(get_data_status())
 
 render_masthead(
-    folio_code="DIAGNOSTIC AUDIT · STATISTICAL RESIDUALS",
+    folio_code="DIAGNOSTIC AUDIT · STATISTICAL RESIDUALS · UNSUPERVISED ISOLATION",
     title="Multi-Variate Anomaly Detection Registry",
-    deck="Isolation Forest ensemble profiling identifying jurisdictions whose socio-economic telemetry deviates significantly (> 1.5 standard deviations) from baseline regional envelopes. Designed to trigger administrative inquiry, not definitive distress.",
-    location_tag="ISOLATION FOREST AUDIT · 100 ESTIMATORS",
+    deck="Isolation Forest ensemble profiling identifying jurisdictions whose multi-sectoral telemetry departs significantly from baseline regional trajectories. Flagged outliers warrant administrative review rather than automatic condemnation.",
+    location_tag="ISOLATION ENSEMBLE · CONTAMINATION 10% · 100 ESTIMATORS",
 )
 
 # ---------------------------------------------------------------------------
@@ -70,7 +74,7 @@ if features_df is not None and is_mock_data(features_df):
     st.warning("Notice: Synthetic test dataset active. Figures reflect simulated distributions.")
 
 # ---------------------------------------------------------------------------
-# Summary Scorecard
+# Dynamic Findings Lede & Summary Scorecard
 # ---------------------------------------------------------------------------
 total = len(anomalies_df)
 flagged_df = anomalies_df[anomalies_df["anomaly_flag"] == True]  # noqa: E712
@@ -79,21 +83,35 @@ pct_flagged = (n_flagged / total * 100) if total > 0 else 0
 avg_score = anomalies_df["anomaly_score"].mean() if "anomaly_score" in anomalies_df.columns else None
 max_score = anomalies_df["anomaly_score"].max() if "anomaly_score" in anomalies_df.columns else None
 
+if n_flagged > 0:
+    top_flagged = flagged_df.sort_values("anomaly_score", ascending=False)
+    top_names = top_flagged["district_name"].tolist()[:3]
+    top_str = ", ".join(top_names)
+    lede_text = (
+        f"Isolation Forest profiling has flagged {n_flagged} of {total} jurisdictions ({pct_flagged:.1f}%) "
+        f"exhibiting multivariate outlier behavior. Peak divergence is recorded in {top_str}, "
+        f"where specific indicator combinations decouple from expected national patterns."
+    )
+else:
+    lede_text = f"Audit complete across {total} jurisdictions. All observation vectors conform to nominal empirical boundaries."
+
+render_editorial_lede(lede_text)
+
 render_editorial_scorecard([
     {
-        "label": "Flagged Jurisdictions",
+        "label": "Flagged Outliers",
         "value": str(n_flagged),
-        "note": f"Out of {total} total evaluated units",
-        "tag": "Divergent Outliers",
-        "tag_bg": "#F7E5DE",
-        "tag_fg": "#8A260F",
-        "tag_border": "#E5A997",
+        "note": f"Out of {total} evaluated administrative units",
+        "tag": "Divergent Profile" if n_flagged > 0 else "Nominal",
+        "tag_bg": "#F7E5DE" if n_flagged > 0 else "#EAEFEA",
+        "tag_fg": "#8A260F" if n_flagged > 0 else "#264230",
+        "tag_border": "#E5A997" if n_flagged > 0 else "#BDCFBF",
     },
     {
         "label": "Contamination Ratio",
         "value": f"{pct_flagged:.1f}%",
-        "note": "Target algorithmic bound: 10.0%",
-        "tag": "Verified",
+        "note": "Configured hyperparameter prior: 10.0%",
+        "tag": "Calibrated",
         "tag_bg": "#EFECE4",
         "tag_fg": "#444A43",
         "tag_border": "#D5D0C5",
@@ -104,10 +122,10 @@ render_editorial_scorecard([
         "note": "Negated forest decision margin (0–100 scale)",
     },
     {
-        "label": "Peak Outlier Magnitude",
+        "label": "Peak Outlier Intensity",
         "value": f"{max_score:.1f}" if pd.notna(max_score) else "N/A",
-        "note": "Highest recorded statistical deviation",
-        "tag": "Focal Audit",
+        "note": "Maximum recorded multivariate deviation",
+        "tag": "Priority Audit",
         "tag_bg": "#F7E5DE",
         "tag_fg": "#8A260F",
         "tag_border": "#E5A997",
@@ -117,13 +135,13 @@ render_editorial_scorecard([
 # ---------------------------------------------------------------------------
 # Flagged Registry & Distribution Histogram
 # ---------------------------------------------------------------------------
-col_table, col_hist = st.columns([1.3, 1])
+col_table, col_hist = st.columns([1.5, 1])
 
 with col_table:
-    render_section_header("SEC. 01", "Divergent Jurisdiction Register", "Flagged Outliers")
+    render_section_header("SEC. 01", "Divergent Jurisdiction Register", "Flagged Outliers by Anomaly Intensity")
 
     if n_flagged == 0:
-        st.success("No jurisdictions flagged as anomalous under the current forest parameters.")
+        st.success("No jurisdictions flagged as anomalous under current forest decision hyper-planes.")
     else:
         display_cols = ["district_name"]
         if "anomaly_score" in flagged_df.columns:
@@ -135,48 +153,63 @@ with col_table:
         show.rename(
             columns={
                 "district_name": "Jurisdiction",
-                "anomaly_score": "Score",
-                "unusual_features": "Divergent Feature Driver(s)",
+                "anomaly_score": "Intensity Score",
+                "unusual_features": "Primary Divergent Feature Drivers",
             },
             inplace=True,
         )
-        if "Score" in show.columns:
-            show.sort_values("Score", ascending=False, inplace=True)
-            show["Score"] = show["Score"].round(1)
+        if "Intensity Score" in show.columns:
+            show.sort_values("Intensity Score", ascending=False, inplace=True)
+            show["Intensity Score"] = show["Intensity Score"].apply(lambda v: f"{v:.1f} / 100")
 
+        show.insert(0, "Rank", [f"#{i+1}" for i in range(len(show))])
         st.dataframe(show, hide_index=True, use_container_width=True)
 
 with col_hist:
     if "anomaly_score" in anomalies_df.columns:
-        render_section_header("SEC. 02", "Anomaly Score Density", "Empirical Frequency")
+        render_section_header("SEC. 02", "Empirical Score Density", "Score Frequency Distribution")
 
         fig_hist = px.histogram(
             anomalies_df,
             x="anomaly_score",
-            nbins=22,
-            color_discrete_sequence=["#1E3A2B"],
-            labels={"anomaly_score": "Anomaly Score"},
+            nbins=20,
+            color_discrete_sequence=["#14241D"],
+            labels={"anomaly_score": "Anomaly Intensity Score"},
         )
         fig_hist.update_traces(
-            marker=dict(line=dict(width=0.8, color="#14241D"))
+            marker=dict(line=dict(width=0.8, color="#FAF8F2"))
         )
         style_editorial_figure(
             fig_hist,
-            height=280,
-            title="Frequency Histogram",
-            subtitle="Distribution of negated decision scores across 38 districts",
+            height=260,
+            title="Density Histogram",
+            subtitle="Distribution of negated forest decision scores across 36 jurisdictions",
         )
-        fig_hist.update_layout(xaxis_title="Score (0 = baseline, 100 = extreme)", yaxis_title="Count", bargap=0.1)
+        fig_hist.update_layout(xaxis_title="Anomaly Score (0 = baseline, 100 = extreme)", yaxis_title="Jurisdictions", bargap=0.08)
         st.plotly_chart(fig_hist, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Detailed Indicator Comparison for a Selected Flagged District
 # ---------------------------------------------------------------------------
 if n_flagged > 0 and features_df is not None:
-    render_section_header("SEC. 03", "Diagnostic Comparative Decomposition", "District vs. State Average")
+    render_section_header("SEC. 03", "Diagnostic Comparative Decomposition", "Target Outlier vs. National Baseline")
 
     flagged_list = sorted(flagged_df["district_name"].dropna().unique())
-    selected = st.selectbox("Select Target Outlier for Diagnostic Drill-Down", flagged_list, index=0)
+    col_outlier_sel, col_explain = st.columns([2, 1])
+    
+    with col_outlier_sel:
+        selected = st.selectbox("Select Target Outlier for Diagnostic Drill-Down", flagged_list, index=0)
+    with col_explain:
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        if hasattr(st, "popover"):
+            with st.popover("How to Interpret Anomaly Scores"):
+                st.markdown(
+                    "**Isolation Forest Methodology**\n\n"
+                    "Isolation Forests isolate observations by randomly selecting a feature and randomly selecting a split value. "
+                    "Anomalies require significantly fewer splits to isolate than normal points.\n\n"
+                    "- **Score > 50**: Noticeable divergence from peer trajectories.\n"
+                    "- **Score > 70**: Acute multivariate decoupling across indicators."
+                )
 
     time_col = "period" if "period" in features_df.columns else ("year" if "year" in features_df.columns else None)
     if time_col and features_df[time_col].nunique() > 1:
@@ -188,67 +221,71 @@ if n_flagged > 0 and features_df is not None:
     district_row = fview[fview["district_name"] == selected]
 
     if not district_row.empty:
-        dim_cols = [c for c in SUB_COLS.values() if c in fview.columns and fview[c].notna().any()]
-        if dim_cols:
-            district_vals = district_row.iloc[0][dim_cols]
-            mean_vals = fview[dim_cols].mean()
+        col_comp_chart, col_comp_note = st.columns([1.5, 1])
+        
+        with col_comp_chart:
+            dim_cols = [c for c in SUB_COLS.values() if c in fview.columns and fview[c].notna().any()]
+            if dim_cols:
+                district_vals = district_row.iloc[0][dim_cols]
+                mean_vals = fview[dim_cols].mean()
 
-            reverse_map = {v: k for k, v in SUB_COLS.items()}
-            comp = pd.DataFrame(
-                {
-                    "Dimension": [reverse_map.get(c, c) for c in dim_cols],
-                    selected: [
-                        round(v, 1) if pd.notna(v) else None
-                        for v in district_vals
-                    ],
-                    "State Baseline Average": [round(v, 1) for v in mean_vals],
-                }
-            )
-
-            comp_long = comp.melt(
-                id_vars="Dimension",
-                value_vars=[selected, "State Baseline Average"],
-                var_name="Cohort",
-                value_name="Index Score",
-            )
-
-            fig_comp = px.bar(
-                comp_long,
-                x="Dimension",
-                y="Index Score",
-                color="Cohort",
-                barmode="group",
-                range_y=[0, 100],
-                color_discrete_map={
-                    selected: "#B84324",                 # Burnt orange for target outlier
-                    "State Baseline Average": "#1E3A2B", # Deep forest green for state average
-                },
-                text="Index Score",
-            )
-            fig_comp.update_traces(
-                texttemplate="%{y:.1f}",
-                textposition="outside",
-                marker=dict(line=dict(width=0.8, color="#14241D")),
-                textfont=dict(family="IBM Plex Mono", size=10),
-            )
-            style_editorial_figure(
-                fig_comp,
-                height=340,
-                title=f"Dimensional Discrepancy — {selected}",
-                subtitle="Target jurisdiction relative to statewide benchmark means",
-            )
-            st.plotly_chart(fig_comp, use_container_width=True)
-
-        amatch = anomalies_df[anomalies_df["district_name"] == selected]
-        if not amatch.empty:
-            unusual = amatch.iloc[0].get("unusual_features", "")
-            if pd.notna(unusual) and str(unusual).strip():
-                st.markdown(
-                    f"""
-                    <div style="background:#FFFFFF; border:1px solid #E2DED4; border-left:3px solid #B84324; padding:12px 16px; margin-top:14px;">
-                        <span style="font-family:'IBM Plex Mono'; font-size:0.7rem; font-weight:600; color:#8A260F; text-transform:uppercase; letter-spacing:0.08em;">Primary Deviation Drivers:</span>
-                        <div style="font-family:'IBM Plex Mono'; font-size:0.82rem; color:#181A18; margin-top:4px;">{unusual}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+                reverse_map = {v: k for k, v in SUB_COLS.items()}
+                comp = pd.DataFrame(
+                    {
+                        "Dimension": [reverse_map.get(c, c) for c in dim_cols],
+                        selected: [round(v, 1) if pd.notna(v) else None for v in district_vals],
+                        "National Baseline Average": [round(v, 1) for v in mean_vals],
+                    }
                 )
+
+                comp_long = comp.melt(
+                    id_vars="Dimension",
+                    value_vars=[selected, "National Baseline Average"],
+                    var_name="Cohort",
+                    value_name="Index Score",
+                )
+
+                fig_comp = px.bar(
+                    comp_long,
+                    x="Dimension",
+                    y="Index Score",
+                    color="Cohort",
+                    barmode="group",
+                    range_y=[0, 100],
+                    color_discrete_map={
+                        selected: "#B84324",                    # Burnt orange for target outlier
+                        "National Baseline Average": "#14241D", # Deep forest green for national average
+                    },
+                    text="Index Score",
+                )
+                fig_comp.update_traces(
+                    texttemplate="%{y:.1f}",
+                    textposition="outside",
+                    marker=dict(line=dict(width=0.8, color="#FAF8F2")),
+                    textfont=dict(family="IBM Plex Mono, monospace", size=10),
+                )
+                style_editorial_figure(
+                    fig_comp,
+                    height=340,
+                    title=f"Dimensional Discrepancy — {selected}",
+                    subtitle="Target outlier relative to nationwide benchmark means (0 = optimal, 100 = distress)",
+                )
+                fig_comp.update_layout(yaxis_title="Index Score (0-100)")
+                st.plotly_chart(fig_comp, use_container_width=True)
+                source_note("UDISE+ and NFHS-5 multi-sector telemetry matrices")
+
+        with col_comp_note:
+            amatch = anomalies_df[anomalies_df["district_name"] == selected]
+            unusual = amatch.iloc[0].get("unusual_features", "") if not amatch.empty else "None"
+            score_target = amatch.iloc[0].get("anomaly_score", 0.0) if not amatch.empty else 0.0
+            
+            margin_note(
+                kicker="Outlier Diagnostic Dossier",
+                title=f"{selected} Divergence Audit",
+                text=(
+                    f"<b>Anomaly Decision Score:</b> {score_target:.1f} / 100<br><br>"
+                    f"<b>Key Feature Decoupling:</b><br><code>{unusual}</code><br><br>"
+                    f"This jurisdiction departs from peer cohorts due to an acute imbalance between physical infrastructure "
+                    f"and human development delivery. Targeted programmatic interventions in the specified driver areas will restore trajectory parity."
+                ),
+            )
