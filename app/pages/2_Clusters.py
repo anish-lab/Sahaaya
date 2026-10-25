@@ -7,6 +7,15 @@ and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parent.parent
+ROOT = APP_DIR.parent
+for p in [str(APP_DIR), str(ROOT)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st

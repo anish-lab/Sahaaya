@@ -7,6 +7,15 @@ and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parent
+ROOT = APP_DIR.parent
+for p in [str(APP_DIR), str(ROOT)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -46,9 +55,9 @@ render_sidebar_masthead(get_data_status())
 
 render_masthead(
     folio_code="VOL. IV · DISPATCH 2026.10 · STATE REGISTRY SURVEY",
-    title="Tamil Nadu Social Vulnerability & Early Warning Observatory",
-    deck="Multi-sectoral early warning radar synthesizing educational delivery (UDISE+), public health telemetry (NFHS-5), and civic infrastructure across 38 canonical administrative districts.",
-    location_tag="TAMIL NADU · 11°07' N, 78°39' E",
+    title="India Social Vulnerability & Early Warning Observatory",
+    deck="Multi-sectoral early warning radar synthesizing educational delivery (UDISE+), public health telemetry (NFHS-5), and civic infrastructure across 36 States and Union Territories.",
+    location_tag="ALL-INDIA · 20°35' N, 78°57' E",
 )
 
 # ---------------------------------------------------------------------------
@@ -119,7 +128,7 @@ render_editorial_scorecard([
     {
         "label": "Jurisdictions Audited",
         "value": str(n_districts),
-        "note": "Canonical Tamil Nadu administrative units",
+        "note": "States & Union Territories audited",
         "tag": "Synchronized",
         "tag_bg": "#EAEFEA",
         "tag_fg": "#264230",
@@ -189,7 +198,7 @@ with col_map:
             fig_map,
             height=600,
             title="Cartographic Survey",
-            subtitle=f"Spatial deciling across Tamil Nadu · {metric_label}",
+            subtitle=f"Spatial deciling across India · {metric_label}",
         )
         fig_map.update_layout(
             coloraxis_colorbar=dict(

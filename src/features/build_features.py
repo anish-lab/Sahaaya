@@ -32,7 +32,8 @@ INDICATOR_DIRECTIONS = {
     # Education
     "dropout_rate": True,
     "pupil_teacher_ratio": True,
-    "enrolment": False,  # higher enrolment = lower vulnerability
+    "female_literacy_pct": False,
+    "schooling_10plus_pct": False,
     # Healthcare
     "stunting_pct": True,
     "wasting_pct": True,
@@ -114,7 +115,7 @@ def build_features(
         df["period"] = periods[0] if periods else "Latest Available"
 
     # Identify indicators for each dimension
-    edu_indicators = ["dropout_rate", "pupil_teacher_ratio", "enrolment"]
+    edu_indicators = ["pupil_teacher_ratio", "female_literacy_pct", "schooling_10plus_pct", "dropout_rate"]
     health_indicators = ["stunting_pct", "wasting_pct", "anaemia_pct", "anaemia_children_pct", "anaemia_women_pct", "institutional_births_pct", "full_vaccination_pct"]
     emp_indicators = ["employment_fulfillment_pct", "persondays_per_hh", "women_persondays_pct", "avg_days_per_hh", "mgnrega_persondays_per_hh"]
     infra_indicators = ["schools_with_electricity_pct", "schools_with_toilets_pct", "schools_with_drinking_water_pct", "schools_with_internet_pct", "school_infra_score"]

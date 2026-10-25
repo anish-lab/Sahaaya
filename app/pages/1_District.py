@@ -7,6 +7,15 @@ and restrained burnt-orange highlights.
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parent.parent
+ROOT = APP_DIR.parent
+for p in [str(APP_DIR), str(ROOT)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -94,7 +103,7 @@ band = latest.get("risk_band", "Moderate")
 render_masthead(
     folio_code=f"JURISDICTION DOSSIER · CODE: {district_id}",
     title=district,
-    deck=f"Diagnostic vulnerability dossier for {district} district, Tamil Nadu. Telemetry synthesized across demographic, nutritional, and institutional service delivery indices.",
+    deck=f"Diagnostic vulnerability dossier for {district} district/state. Telemetry synthesized across demographic, nutritional, and institutional service delivery indices.",
     location_tag=f"TIER: {band.upper()} VULNERABILITY",
 )
 

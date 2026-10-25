@@ -3,9 +3,12 @@ from __future__ import annotations
 """
 ingestion.udise — UDISE+ education data ingestor.
 
-Reads raw UDISE+ data files from ``data/raw/udise/``, auto-maps columns
-to standard indicator names, matches States/UTs to the canonical master,
-and saves cleaned output.
+Reads raw UDISE+ data files from ``data/raw/udise/``:
+1. Table 2.5: Infrastructure (computes real percentages by dividing by Total Schools)
+2. Table 3.17: Total Enrolment
+3. Table 4.13: Total Teachers
+4. Computes genuine Pupil-Teacher Ratio (PTR = Enrolment / Teachers)
+5. Standardizes State/UT names and saves cleaned output.
 """
 
 import sys
@@ -13,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -21,43 +25,14 @@ from src.ingestion.base import BaseIngestor, read_any_tabular
 from src.preprocessing.clean import (
     parse_numeric,
     standardize_column_names,
-    detect_year_column,
     remove_aggregate_rows,
 )
 from src.preprocessing.standardize import apply_canonical_mapping
 from src.build_district_master import build_district_master
 
-# ---------------------------------------------------------------------------
-# Column mapping
-# ---------------------------------------------------------------------------
-COLUMN_PATTERNS: dict[str, list[str]] = {
-    "enrolment": [
-        "enrolment", "enrollment", "total_enrolment", "total_enrollment",
-        "total_students", "enrolment_overall",
-    ],
-    "dropout_rate": [
-        "dropout", "drop_out", "drop_out_rate", "repetition_rate",
-    ],
-    "pupil_teacher_ratio": [
-        "pupil_teacher", "ptr", "pupil_teacher_ratio", "student_teacher", "number_of_teachers", "teachers",
-    ],
-    "schools_with_electricity_pct": [
-        "electricity", "electric", "schools_with_electricity",
-    ],
-    "schools_with_toilets_pct": [
-        "toilet", "toilets", "functional_toilet", "cwsn_friendly_toilets",
-    ],
-    "schools_with_drinking_water_pct": [
-        "drinking_water", "water", "functional_drinking_water",
-    ],
-    "schools_with_internet_pct": [
-        "internet", "computer", "ict", "digital_library", "tinkering_labs", "library",
-    ],
-}
-
 DISTRICT_COL_PATTERNS = [
-    "state_ut", "states_uts", "state/ut", "states/uts", "state_name", "state", "statename",
-    "district", "dist_name", "district_name", "distname", "dist",
+    "india_state_ut", "india_state__ut", "state_ut", "states_uts", "state/ut",
+    "state_name", "state", "statename", "district_name", "district",
 ]
 
 
@@ -72,7 +47,6 @@ class UDISEIngestor(BaseIngestor):
         self.source_dir = self.raw_dir / self.SOURCE
 
     def discover(self) -> list[Path]:
-        """Find all tabular files in data/raw/udise/."""
         exts = {".csv", ".xlsx", ".xls", ".parquet"}
         if not self.source_dir.exists():
             return []
@@ -85,58 +59,28 @@ class UDISEIngestor(BaseIngestor):
         return files
 
     def inspect(self, filepath: Path) -> dict:
-        """Return shape, columns, dtypes of a raw file."""
         df = read_any_tabular(filepath)
         return {
             "file": filepath.name,
             "shape": df.shape,
             "columns": list(df.columns),
-            "dtypes": {c: str(d) for c, d in df.dtypes.items()},
         }
 
-    def _auto_map_columns(self, df: pd.DataFrame) -> dict[str, str]:
-        """Map raw columns to standard indicator names via pattern matching."""
-        mapping: dict[str, str] = {}
-        cols_lower = {c: c.lower().replace(" ", "_") for c in df.columns}
-
-        for std_name, patterns in COLUMN_PATTERNS.items():
-            for raw_col, col_low in cols_lower.items():
-                if any(pat in col_low for pat in patterns):
-                    mapping[raw_col] = std_name
-                    break
-        return mapping
-
     def _find_col(self, df: pd.DataFrame, patterns: list[str]) -> Optional[str]:
-        """Find the first column whose lowered name contains any pattern."""
         for col in df.columns:
-            cl = col.lower().replace(" ", "_")
+            cl = str(col).lower().replace(" ", "_")
             if any(p in cl for p in patterns):
                 return col
         return None
 
     def clean(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply UDISE-specific cleaning."""
         df = standardize_column_names(df)
-
         dist_col = self._find_col(df, DISTRICT_COL_PATTERNS)
         if dist_col:
             df = remove_aggregate_rows(df, dist_col)
-
-        year_col = detect_year_column(df)
-        if year_col:
-            df["period"] = df[year_col].astype(str)
-
-        col_map = self._auto_map_columns(df)
-        df = df.rename(columns=col_map)
-
-        for std_col in COLUMN_PATTERNS.keys():
-            if std_col in df.columns:
-                df[std_col] = parse_numeric(df[std_col])
-
         return df
 
     def validate(self, df: pd.DataFrame) -> dict:
-        """Validate cleaned UDISE DataFrame."""
         return {
             "source": self.SOURCE,
             "row_count": len(df),
@@ -144,7 +88,6 @@ class UDISEIngestor(BaseIngestor):
         }
 
     def load(self) -> Optional[pd.DataFrame]:
-        """Full pipeline: discover -> read -> clean -> match states -> save."""
         files = self.discover()
         if not files:
             print("[UDISE] No raw files found. Skipping.")
@@ -153,29 +96,99 @@ class UDISEIngestor(BaseIngestor):
         master = build_district_master()
         merged_df = master[["district_id", "district_name", "state"]].copy()
 
+        # Temporary stores
+        enrol_df: Optional[pd.DataFrame] = None
+        teach_df: Optional[pd.DataFrame] = None
+        infra_df: Optional[pd.DataFrame] = None
+
         for fp in files:
             try:
-                df = read_any_tabular(fp)
-                print(f"[UDISE] Read {fp.name}: {df.shape}")
-                df = self.clean(df)
+                raw_df = read_any_tabular(fp)
+                print(f"[UDISE] Processing {fp.name}: shape {raw_df.shape}")
+                df = self.clean(raw_df)
                 dist_col = self._find_col(df, DISTRICT_COL_PATTERNS)
-                if dist_col:
-                    matched, unmatched = apply_canonical_mapping(df, dist_col, master)
-                    matched = matched[matched["match_type"] != "unmatched"].copy()
-                    matched["district_name"] = matched["canonical_name"]
-                    matched["state"] = matched["canonical_name"]
+                if not dist_col:
+                    continue
 
-                    keep_cols = ["district_id"] + [
-                        c for c in matched.columns if c in COLUMN_PATTERNS.keys() or c == "period"
+                matched, _ = apply_canonical_mapping(df, dist_col, master)
+                matched = matched[matched["match_type"] != "unmatched"].copy()
+
+                cols_lower = [str(c).lower() for c in matched.columns]
+
+                # 1. Check if Table 2.5 (Infrastructure)
+                if any("total_schools" in c for c in cols_lower) or any("library" in c for c in cols_lower):
+                    tot_col = [c for c in matched.columns if "total_schools" in str(c).lower()][0]
+                    matched[tot_col] = parse_numeric(matched[tot_col]).replace(0, np.nan)
+
+                    # Compute genuine percentages
+                    elec_cols = [c for c in matched.columns if "functional_electricity" in str(c).lower() or "electricity" in str(c).lower()]
+                    water_cols = [c for c in matched.columns if "functional_drinking" in str(c).lower() or "drinking_water" in str(c).lower()]
+                    toilet_cols = [c for c in matched.columns if "functional_girls" in str(c).lower() or "girls'_toilet" in str(c).lower() or "toilet" in str(c).lower()]
+                    net_cols = [c for c in matched.columns if "internet" in str(c).lower()]
+                    comp_cols = [c for c in matched.columns if "computer" in str(c).lower() and "functional" in str(c).lower()]
+
+                    infra_res = pd.DataFrame({"district_id": matched["district_id"]})
+                    if elec_cols:
+                        infra_res["schools_with_electricity_pct"] = (parse_numeric(matched[elec_cols[0]]) / matched[tot_col] * 100.0).clip(0, 100).round(1)
+                    if water_cols:
+                        infra_res["schools_with_drinking_water_pct"] = (parse_numeric(matched[water_cols[0]]) / matched[tot_col] * 100.0).clip(0, 100).round(1)
+                    if toilet_cols:
+                        infra_res["schools_with_toilets_pct"] = (parse_numeric(matched[toilet_cols[0]]) / matched[tot_col] * 100.0).clip(0, 100).round(1)
+                    if net_cols:
+                        infra_res["schools_with_internet_pct"] = (parse_numeric(matched[net_cols[0]]) / matched[tot_col] * 100.0).clip(0, 100).round(1)
+                    if comp_cols:
+                        infra_res["schools_with_computers_pct"] = (parse_numeric(matched[comp_cols[0]]) / matched[tot_col] * 100.0).clip(0, 100).round(1)
+
+                    infra_df = infra_res.drop_duplicates(subset=["district_id"])
+
+                # 2. Check if Table 3.17 (Enrolment)
+                elif any("enrolment" in c for c in cols_lower):
+                    enrol_cols = [c for c in matched.columns if "pre-primary_to_higher_secondary_-_total" in str(c).lower() or "total" in str(c).lower()]
+                    target_col = enrol_cols[0] if enrol_cols else matched.columns[2]
+                    enrol_res = pd.DataFrame({
+                        "district_id": matched["district_id"],
+                        "enrolment": parse_numeric(matched[target_col]),
+                    })
+                    enrol_df = enrol_res.drop_duplicates(subset=["district_id"])
+
+                # 3. Check if Table 4.13 (Teachers)
+                elif any("teachers" in c for c in cols_lower):
+                    # Pick the total teachers column (exclude male/female gender breakdowns and sub-level totals)
+                    teach_cols = [
+                        c for c in matched.columns
+                        if "total" in str(c).lower()
+                        and "male" not in str(c).lower()
+                        and "female" not in str(c).lower()
+                        and "pre_primary" not in str(c).lower()
+                        and "primary" not in str(c).lower()
                     ]
-                    matched_sub = matched[keep_cols].drop_duplicates(subset=["district_id"])
-                    merged_df = merged_df.merge(matched_sub, on="district_id", how="left")
+                    target_col = teach_cols[0] if teach_cols else matched.columns[2]
+                    teach_res = pd.DataFrame({
+                        "district_id": matched["district_id"],
+                        "teachers": parse_numeric(matched[target_col]),
+                    })
+                    teach_df = teach_res.drop_duplicates(subset=["district_id"])
+
             except Exception as e:
                 print(f"[UDISE] ERROR reading {fp.name}: {e}")
 
+        # Merge Infrastructure
+        if infra_df is not None:
+            merged_df = merged_df.merge(infra_df, on="district_id", how="left")
+
+        # Compute Pupil-Teacher Ratio (PTR = Enrolment / Teachers)
+        if enrol_df is not None and teach_df is not None:
+            ptr_merge = enrol_df.merge(teach_df, on="district_id", how="inner")
+            ptr_merge["pupil_teacher_ratio"] = (ptr_merge["enrolment"] / ptr_merge["teachers"].replace(0, np.nan)).round(1)
+            merged_df = merged_df.merge(ptr_merge[["district_id", "enrolment", "pupil_teacher_ratio"]], on="district_id", how="left")
+        elif enrol_df is not None:
+            merged_df = merged_df.merge(enrol_df, on="district_id", how="left")
+
+        merged_df["period"] = "UDISE+ 2022-23"
+
         out_path = self.interim_dir / self.OUTPUT_FILE
         merged_df.to_parquet(out_path, index=False)
-        print(f"[UDISE] Saved clean data to {out_path} ({len(merged_df)} states/UTs)")
+        print(f"[UDISE] Successfully compiled clean education & infrastructure table -> {out_path}")
         return merged_df
 
 
@@ -183,4 +196,4 @@ if __name__ == "__main__":
     ingestor = UDISEIngestor()
     res = ingestor.load()
     if res is not None:
-        print(res.head())
+        print(res.head(8))

@@ -49,6 +49,12 @@ COLUMN_PATTERNS: dict[str, list[str]] = {
     "health_insurance_pct": [
         "health insurance", "health_insurance",
     ],
+    "female_literacy_pct": [
+        "who are literate", "female_literacy", "literacy_rate",
+    ],
+    "schooling_10plus_pct": [
+        "10 or more years of schooling", "schooling_10plus", "years_of_schooling",
+    ],
 }
 
 STATE_COL_PATTERNS = ["state_ut", "states_uts", "state/ut", "state_name", "state", "statename"]
