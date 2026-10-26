@@ -230,47 +230,6 @@ class TestAnomalyDetection:
             pytest.skip("anomaly module not yet built")
 
 
-class TestSimulator:
-    """Test what-if simulator."""
-
-    def test_simulator_baseline(self, sample_features):
-        """Simulator returns valid baseline for a district."""
-        try:
-            from src.models.simulate import WhatIfSimulator
-            import tempfile
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                feat_path = Path(tmpdir) / "features.parquet"
-                sample_features.to_parquet(feat_path)
-
-                sim = WhatIfSimulator(features_path=feat_path)
-                baseline = sim.get_district_baseline("Chennai")
-
-                assert baseline is not None
-                assert "overall_score" in baseline
-        except ImportError:
-            pytest.skip("simulate module not yet built")
-
-    def test_simulator_adjustments(self, sample_features):
-        """Simulator produces different scores when indicators change."""
-        try:
-            from src.models.simulate import WhatIfSimulator
-            import tempfile
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                feat_path = Path(tmpdir) / "features.parquet"
-                sample_features.to_parquet(feat_path)
-
-                sim = WhatIfSimulator(features_path=feat_path)
-                result = sim.simulate("Chennai", {"edu_risk": 10.0})
-
-                assert "baseline" in result
-                assert "scenario" in result
-                assert "delta" in result
-        except ImportError:
-            pytest.skip("simulate module not yet built")
-
-
 class TestPreprocessing:
     """Test preprocessing utilities."""
 

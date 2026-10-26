@@ -98,14 +98,7 @@ python -c "from src.models.cluster import ClusterModel; ClusterModel('data/proce
   - **Nagaland (Score 72.8)**: Lowest school piped water coverage (48.4%), exceptionally low institutional births (45.7%).
   - **Jharkhand (Score 53.7)**: Severe coupled human development deficits across stunting (39.6%) and teacher shortages.
 
-### 5. Simulator Honesty: Non-Causal What-If & Uncertainty
-- **Methodological Disclaimer**: The counterfactual simulator is explicitly labeled as a **model-based what-if accounting tool, not a causal inference engine** (such as an RCT, Difference-in-Differences, or Instrumental Variable model). It does not model general equilibrium adjustments or behavioral spillovers.
-- **Score Recomputation**:
-  $$S_i(x_i) = 100 \times \frac{x_i - \min(X_i)}{\max(X_i) - \min(X_i)}$$
-  $$D_k = \frac{1}{|I_k|} \sum_{i \in I_k} S_i(x_i), \quad V_{\text{sim}} = \frac{1}{|K_{\text{obs}}|} \sum_{k \in K_{\text{obs}}} D_k$$
-- **Uncertainty Bounds**: Every simulated score includes an empirical observational uncertainty band of **$\pm 1.8$ points (95% CI)** based on survey sampling and administrative measurement error.
-
-### 6. Three Verified Pillars & Data Integrity (100% Telemetry)
+### 5. Three Verified Pillars & Data Integrity (100% Telemetry)
 - **Exclusion of Unharmonized Datasets**: Employment metrics were removed from the production index because open state-level feeds are currently awaiting centralized data.gov.in harmonization.
 - **Three Core Statutory Pillars**:
   1. 🎓 **Education Vulnerability (`edu_risk`)**: Pupil-teacher ratios, female literacy rates, schooling 10+ years, and dropout rates (UDISE+).
@@ -114,7 +107,7 @@ python -c "from src.models.cluster import ClusterModel; ClusterModel('data/proce
 - **100% Data Completeness**: With all 3 statutory pillars fully verified and present across all 36 States and Union Territories, `data_completeness = 1.0` (100%) with zero missingness and zero synthetic imputation required:
   $$V = \frac{\text{edu\_risk} + \text{health\_risk} + \text{infra\_risk}}{3} \quad (w_{\text{edu}} = w_{\text{health}} = w_{\text{infra}} = 33.33\%)$$
 
-### 7. Collinearity Audit & Circular Leakage Prevention
+### 6. Collinearity Audit & Circular Leakage Prevention
 - **Collinear Feature Pairs ($|r| \ge 0.70$)**:
   - `schools_with_electricity_pct` $\leftrightarrow$ `schools_with_drinking_water_pct`: $r = 0.813$
   - `schools_with_internet_pct` $\leftrightarrow$ `schools_with_computers_pct`: $r = 0.822$
@@ -137,7 +130,6 @@ python src/evaluation/correlation_leakage.py
 | **State Dossier** | [`app/pages/1_State.py`](app/pages/1_State.py) | In-depth State & UT drilldown | Dimensional benchmark overlay bars, typology peer cards, telemetry ledger |
 | **Clusters** | [`app/pages/2_Clusters.py`](app/pages/2_Clusters.py) | Unsupervised socioeconomic archetypes | 2D PCA latent biplot, Elbow & Silhouette curves, policy playbooks |
 | **Anomalies** | [`app/pages/3_Anomalies.py`](app/pages/3_Anomalies.py) | Multi-variate outlier detection | Decision score distribution, outlier vs national mean bar comparison, divergence ledger |
-| **Simulator** | [`app/pages/4_Simulator.py`](app/pages/4_Simulator.py) | Interactive what-if policy explorer | Rapid preset scenarios, parameter sliders, before/after scorecard with $\pm 1.8$ pt CI |
 
 ---
 
@@ -212,10 +204,9 @@ Sahaaya/
 │   ├── ui_theme.py                    # FT/Economist editorial design tokens & CSS
 │   ├── utils.py                       # Cached data loaders & GeoJSON bounds
 │   └── pages/
-│       ├── 1_State.py              # Jurisdictional dossier & missingness note
+│       ├── 1_State.py                 # Jurisdictional dossier & missingness note
 │       ├── 2_Clusters.py              # Field guide, PCA biplot & cluster rigor
-│       ├── 3_Anomalies.py             # Isolation Forest registry & attribution
-│       └── 4_Simulator.py             # Non-causal what-if explorer & ±1.8 pt CI
+│       └── 3_Anomalies.py             # Isolation Forest registry & attribution
 ├── data/
 │   ├── raw/                           # Official UDISE+, NFHS-5, boundary sources
 │   ├── interim/                       # Cleaned source tables
@@ -232,7 +223,7 @@ Sahaaya/
 │   ├── pipeline.py                    # Master data processing pipeline
 │   ├── ingestion/                     # UDISE+ and NFHS-5 data parsers
 │   ├── features/                      # Min-max normalization & composite scoring
-│   ├── models/                        # Clustering, Isolation Forest, Simulator
+│   ├── models/                        # Clustering and Isolation Forest models
 │   ├── preprocessing/                 # Cleaning, standardization, GeoJSON prep
 │   └── evaluation/                    # NITI MPI validation, sensitivity & leakage
 └── tests/
@@ -248,7 +239,7 @@ Sahaaya/
 
 1. **Constructed Analytical Prioritization**: The SAHAAYA index is an administrative decision-support construct for macro fiscal and programmatic allocation. It is not an individual or clinical diagnostic measure.
 2. **Survey Sampling vs Administrative Census**: NFHS-5 reflects a multi-stage stratified sample survey (2019-21), whereas UDISE+ reflects an annual school administrative census (2022-23). Inter-temporal differences reflect standard publication cycles of the respective union ministries.
-3. **Non-Causal Counterfactuals**: Simulated indicator shifts demonstrate normative index elasticities, not causal counterfactual treatments.
+3. **Macro-Level Prioritization**: The index provides strategic macro-level early warning signals for state-level allocation. Local implementation requires granular micro-planning.
 4. **Missing Dimension Treatment**: Missing pillars are not imputed with synthetic values; the index dynamically renormalizes across observed dimensions ($w_d = 1/3$).
 
 ---

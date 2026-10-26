@@ -559,9 +559,9 @@ with st.expander("Methodological Limitations, Missing Data Policy & Data Governa
             "SAHAAYA evaluates social vulnerability across three verified statutory pillars: Education (UDISE+), Healthcare & Nutrition (NFHS-5), "
             "and Civic Infrastructure (UDISE+). With employment telemetry excluded due to missing national datasets, all 3 active dimensions "
             "are 100% complete across all 36 States and Union Territories with zero imputation required.\n\n"
-            "##### 4. Model-Based Accounting (Non-Causal Simulator)\n"
-            "The counterfactual simulator applies linear sensitivity accounting through the normative index framework. "
-            "It does not represent an econometrically identified causal treatment model (e.g. RCT, DiD)."
+            "##### 4. Macro-Level Resource Prioritization\n"
+            "The SAHAAYA index provides macro-level early warning signals for state-level resource planning. "
+            "District and block-level resource allocation requires granular micro-administrative telemetry."
         )
 
 # ---------------------------------------------------------------------------
