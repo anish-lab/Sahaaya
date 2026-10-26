@@ -104,11 +104,21 @@ def load_anomalies() -> Optional[pd.DataFrame]:
 
 @st.cache_data(show_spinner="Loading GeoJSON boundaries...")
 def load_geojson() -> Optional[dict]:
-    """Load tn_districts.geojson.  Returns None if missing."""
-    if not GEOJSON_PATH.exists():
+    """Load India state boundaries GeoJSON.  Returns None if missing."""
+    target_path = INDIA_GEOJSON_PATH if INDIA_GEOJSON_PATH.exists() else TN_GEOJSON_PATH
+    if not target_path.exists():
         return None
     try:
-        return json.loads(GEOJSON_PATH.read_text(encoding="utf-8"))
+        data = json.loads(target_path.read_text(encoding="utf-8"))
+        for feat in data.get("features", []):
+            p = feat.setdefault("properties", {})
+            for key in ["district", "district_name", "state", "name"]:
+                val = p.get(key)
+                if isinstance(val, (list, tuple)) and len(val) >= 2:
+                    p[key] = str(val[1])
+                elif val is not None and not isinstance(val, str):
+                    p[key] = str(val)
+        return data
     except Exception:
         return None
 

@@ -220,6 +220,8 @@ with col_map:
             subtitle=f"Spatial deciling across India · {metric_label}",
         )
         fig_map.update_layout(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
             coloraxis_colorbar=dict(
                 title=dict(text="Index (0-100)", font=dict(family="IBM Plex Mono, monospace", size=10)),
                 thickness=10,
